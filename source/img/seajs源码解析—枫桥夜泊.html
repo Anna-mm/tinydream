@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<!-- saved from url=(0046)http://localhost:4000/2014/03/17/seajs-source/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>seajs源码解析—枫桥夜泊</title><link href="http://localhost:4000/img/favicon.ico" rel="icon"><link rel="alternate" href="http://localhost:4000/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="http://localhost:4000/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="http://localhost:4000/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>seajs源码解析</h2><div class="meta">Mar 17 2014</div><p>关于seajs的源码解析玉伯自己也只写了两篇<a href="http://chuansongme.com/n/124571" target="_blank" rel="external">http://chuansongme.com/n/124571</a>、<a href="http://chuansongme.com/n/126184" target="_blank" rel="external">http://chuansongme.com/n/126184</a>，去年订阅他的微信号后就已拜读过。讲述了目录结构、大闭包等这些表面的细节，还未真正写到精髓，就没有了。最近项目中应用了seajs，模块化改造也并不复杂，腾出时间专门看看源码。<br>下载个seajs，src目录如下：</p>
+<pre><code><span class="comment">src</span>
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">intro</span><span class="string">.</span><span class="comment">js</span>             <span class="literal">-</span><span class="literal">-</span> <span class="comment">全局闭包头部</span>
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">sea</span><span class="string">.</span><span class="comment">js</span>               <span class="literal">-</span><span class="literal">-</span> <span class="comment">基本命名空间</span>
+
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">util</span><span class="literal">-</span><span class="comment">lang</span><span class="string">.</span><span class="comment">js</span>         <span class="literal">-</span><span class="literal">-</span> <span class="comment">语言增强</span>
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">util</span><span class="literal">-</span><span class="comment">events</span><span class="string">.</span><span class="comment">js</span>       <span class="literal">-</span><span class="literal">-</span> <span class="comment">简易事件机制</span>
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">util</span><span class="literal">-</span><span class="comment">path</span><span class="string">.</span><span class="comment">js</span>         <span class="literal">-</span><span class="literal">-</span> <span class="comment">路径处理</span>
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">util</span><span class="literal">-</span><span class="comment">request</span><span class="string">.</span><span class="comment">js</span>      <span class="literal">-</span><span class="literal">-</span> <span class="comment">HTTP</span> <span class="comment">请求</span>
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">util</span><span class="literal">-</span><span class="comment">deps</span><span class="string">.</span><span class="comment">js</span>         <span class="literal">-</span><span class="literal">-</span> <span class="comment">依赖提取</span>
+
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">module</span><span class="string">.</span><span class="comment">js</span>            <span class="literal">-</span><span class="literal">-</span> <span class="comment">核心代码</span>
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">config</span><span class="string">.</span><span class="comment">js</span>            <span class="literal">-</span><span class="literal">-</span> <span class="comment">配置</span>
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">outro</span><span class="string">.</span><span class="comment">js</span>             <span class="literal">-</span><span class="literal">-</span> <span class="comment">全局闭包尾部</span>
+</code></pre><p>Dist目录中的sea-debug.js就是上述文件按顺序合并而成，未压缩代码行900+，按模块回顾下吧。</p>
+<p>intro.js，只是一个包装而且是个上包装，下包装见outro.js。</p>
+<pre><code>(<span class="function"><span class="keyword">function</span><span class="params">(global, undefined)</span> {</span>
+    <span class="keyword">if</span> (<span class="keyword">global</span>.seajs) {
+        <span class="keyword">return</span>
+    }
+</code></pre><p>jQuery的包装器基本也是这样：</p>
+<pre><code>(<span class="keyword">function</span>(window, undefined) {
+    var jQuery ＝  <span class="keyword">...</span>
+    <span class="keyword">...</span>
+    window.jQuery = window.$ = jQuery;
+})(window);
+</code></pre><p>注意两点：<br>1、自调用匿名函数创建了一个闭包，该作用域中的代码不会破坏和污染全局变量，这是任何一个javasript库所必备的功能。<br>2、jQuery传递是window参数，seajs传递的是global参数，作者说，“在浏览器环境中，global 是 window 对象。在 Node.js 环境中，global 则是 node 环境中的 global 对象。这是一个跨平台的兼容式写法。”<br>3、传入undefined参数是为了确保undefined的值是undefined，避免被低版本浏览器通过window.undefined＝“”这样的赋值语句重写。<br>3、传入window、undefined参数有一个共通原因是可以使其变为局部变量，这样在jQuery代码块中访问它时，不需要将作用域回退到顶层作用域，更快地访问到window对象。同时局部变量可以进行压缩优化，压缩为一个字符，也省不少字节。<br>sea.js，确保全局环境中只有一个seajs，events、。。。等均保存在data中。</p>
+<pre><code><span class="built_in">var</span> seajs <span class="subst">=</span> <span class="built_in">global</span><span class="built_in">.</span>seajs <span class="subst">=</span> {
+    <span class="comment">// The current version of Sea.js being used</span>
+    version: <span class="string">"2.1.1"</span>
+}
+<span class="built_in">var</span> <span class="built_in">data</span> <span class="subst">=</span> seajs<span class="built_in">.</span><span class="built_in">data</span> <span class="subst">=</span> {}
+</code></pre><p>util-lang.js</p>
+<pre><code><span class="function"><span class="keyword">function</span> <span class="title">isType</span><span class="params">(type)</span> {</span>
+    <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(obj)</span> {</span>
+        <span class="keyword">return</span> <span class="built_in">Object</span>.prototype.toString.call(obj) === <span class="string">"[object "</span> + type + <span class="string">"]"</span>
+    }
+}
+<span class="keyword">var</span> isObject = isType(<span class="string">"Object"</span>)
+<span class="keyword">var</span> isString = isType(<span class="string">"String"</span>)
+<span class="keyword">var</span> isArray = <span class="built_in">Array</span>.isArray || isType(<span class="string">"Array"</span>)
+<span class="keyword">var</span> isFunction = isType(<span class="string">"Function"</span>)
+
+<span class="keyword">var</span> _cid = <span class="number">0</span>
+<span class="function"><span class="keyword">function</span> <span class="title">cid</span><span class="params">()</span> {</span>
+    <span class="keyword">return</span> _cid++
+}
+</code></pre><p>util-events.js,简单事件机制包括绑定、解绑、触发。</p>
+<pre><code>var <span class="keyword">events</span> = <span class="transposed_variable">data.</span><span class="keyword">events</span> = <span class="cell">{}</span>
+<span class="transposed_variable">seajs.</span>on = <span class="function"><span class="keyword">function</span><span class="params">(name, callback)</span> {}</span>
+<span class="transposed_variable">seajs.</span>off = <span class="function"><span class="keyword">function</span><span class="params">(name, callback)</span> {}</span>
+var emit = <span class="transposed_variable">seajs.</span>emit = <span class="function"><span class="keyword">function</span><span class="params">(name, data)</span> {}</span>
+</code></pre><p>util-path.js</p>
+<pre><code><span class="keyword">var</span> doc = document
+<span class="keyword">var</span> loc = location
+<span class="keyword">var</span> cwd = dirname(loc.href)
+<span class="keyword">var</span> scripts = doc.getElementsByTagName(<span class="string">"script"</span>)
+
+<span class="comment">// 得到最后一个script标签</span>
+<span class="keyword">var</span> loaderScript = doc.getElementById(<span class="string">"seajsnode"</span>) ||
+    scripts[scripts.length - <span class="number">1</span>]
+<span class="comment">// 最后一个script标签的请求路径，不包括文件名</span>
+<span class="keyword">var</span> loaderDir = dirname(getScriptAbsoluteSrc(loaderScript) || cwd)
+<span class="comment">// 得到指定标签的全路径</span>
+<span class="function"><span class="keyword">function</span> <span class="title">getScriptAbsoluteSrc</span><span class="params">(node)</span> {</span>}
+<span class="comment">//提取路径名，如dirname("a/b/c.js?t=123#xx/zz") ==&gt; "a/b/"</span>
+<span class="function"><span class="keyword">function</span> <span class="title">dirname</span><span class="params">(path)</span> {</span>}
+<span class="function"><span class="keyword">function</span> <span class="title">realpath</span><span class="params">(path)</span> {</span>}
+<span class="function"><span class="keyword">function</span> <span class="title">normalize</span><span class="params">(path)</span> {</span>}
+<span class="function"><span class="keyword">function</span> <span class="title">parseAlias</span><span class="params">(id)</span> {</span>}
+<span class="function"><span class="keyword">function</span> <span class="title">parsePaths</span><span class="params">(id)</span> {</span>}
+<span class="function"><span class="keyword">function</span> <span class="title">parseVars</span><span class="params">(id)</span> {</span>}
+<span class="function"><span class="keyword">function</span> <span class="title">parseMap</span><span class="params">(uri)</span> {</span>}
+<span class="function"><span class="keyword">function</span> <span class="title">addBase</span><span class="params">(id, refUri)</span> {</span>}
+<span class="function"><span class="keyword">function</span> <span class="title">id2Uri</span><span class="params">(id, refUri)</span> {</span>}
+
+<span class="comment">// 对外接口</span>
+seajs.resolve = id2Uri
+</code></pre><p>util-request.js</p>
+<pre><code>//创建<span class="tag">&lt;<span class="title">link</span>&gt;</span>或<span class="tag">&lt;<span class="title">script</span>&gt;</span><span class="javascript">标签，预加载后插入到页面中。
+<span class="function"><span class="keyword">function</span> <span class="title">request</span><span class="params">(url, callback, charset)</span> {</span>}
+<span class="function"><span class="keyword">function</span> <span class="title">getCurrentScript</span><span class="params">()</span> {</span>}</span>
+</code></pre><p>util-deps.js，只有一个函数，用于提取每个模块中require的文件</p>
+<pre><code><span class="function"><span class="keyword">function</span> <span class="title">parseDependencies</span><span class="params">(code)</span> {</span>}
+</code></pre><p>module.js 模块化的核心策略</p>
+<pre><code>seajs.<span class="keyword">use</span> = <span class="function"><span class="keyword">function</span><span class="params">(ids, callback)</span> {</span>
+    <span class="comment">//加载config中的预加载项</span>
+    Module.preload(<span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+        <span class="comment">// ids：依赖模块或是模块本身，第三个参数为模块uri，如</span>
+        http:<span class="comment">//www.l99.com/_use_4，为什么要拼凑这样一个uri。</span>
+        Module.<span class="keyword">use</span>(ids, callback, data.cwd + <span class="string">"_use_"</span> + cid())
+    })
+    <span class="keyword">return</span> seajs
+}
+<span class="comment">//获取模块缓存或创建一个新的模块</span>
+Module.<span class="keyword">use</span> = <span class="function"><span class="keyword">function</span> <span class="params">(ids, callback, uri)</span> {</span>}
+<span class="comment">//加载模块、并设置相应的状态、_waitings、_remain</span>
+Module.prototype.load = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>}
+<span class="comment">//得到最终的调用模块的uris</span>
+Module.prototype.resolve = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>}
+<span class="comment">//通过id和refUri得到最终的uri，如"dashboard/dashboard_inset_header" + </span>
+<span class="comment">//"http://www.l99.com/_use_1"=&gt; //"http://www.l99.com/jscmd/dashboard/dashboard_inset_header.js?v=20140305"</span>
+Module.resolve = <span class="function"><span class="keyword">function</span><span class="params">(id, refUri)</span> {</span>}
+<span class="comment">//模块的构造函数</span>
+<span class="function"><span class="keyword">function</span> <span class="title">Module</span><span class="params">(uri, deps)</span> {</span>
+    <span class="keyword">this</span>.uri = uri
+    <span class="keyword">this</span>.dependencies = deps || []
+    <span class="keyword">this</span>.exports = <span class="literal">null</span>
+    <span class="keyword">this</span>.status = <span class="number">0</span>
+    <span class="comment">// Who depends on me</span>
+    <span class="keyword">this</span>._waitings = {}
+    <span class="comment">// The number of unloaded dependencies</span>
+    <span class="keyword">this</span>._remain = <span class="number">0</span>
+}
+</code></pre><p>。。。<br>这个地方还有很多实质内容没有分析，今天先到这，专注不下去了。<br>。。。</p>
+<p>outro.js，将this传入闭包体global，在浏览器环境中global 是 window 对象。在 Node.js 环境中global 则是 node 环境中的 global 对象</p>
+<pre><code>})(<span class="keyword">this</span>);
+</code></pre></article><nav id="article-pagination"><a href="http://localhost:4000/2014/03/29/h5-collapse/" title="Previous article: HTML5移动开发中菜单如何左右折叠" class="prev">← Previous article</a><a href="http://localhost:4000/2014/03/01/h5-specs/" title="Next article: 移动端浏览器下页面制作规范" class="next">Next article →</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="http://localhost:4000/about">About</a></li><li><a href="http://localhost:4000/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="http://localhost:4000/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>
