@@ -1,2 +1,2 @@
 # tinydream
-my website
+my website [tinydream](http://www.tinydream.cn)
