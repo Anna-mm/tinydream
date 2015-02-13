@@ -1,0 +1,14 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>Firefox扩展开发实战&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>Firefox扩展开发实战</h2><div class="meta">Dec 28 2012</div><p>说到Firefox插件，大家耳熟能详的就是救广大前端开发者于水火之中的firebug，虽然后来风头已逝被chrome下的调试工具甩出了几条街，我这样的老粉丝也转移了战场，但是并不影响它在我们前进道路上立下的汗马功劳。那你有没有想看一看firebug的源码？有没有想自己开发一个浏览器插件。（准确地说，应该叫扩展。还比如web developer、Alexa、Fiddler、YSlow，而插件指的是其他公司如Adobe、苹果在firefox以外构建的，如shockwave flash、silverlight）</p>
+<p>好，如果你是win7，揭开firebug神秘面纱的时刻到了。<br>通过命令行%APPDATA%\Mozilla\Firefox\Profiles打开文件，见下图：</p>
+<p><img src="/img/ffExtension1.png" alt="Firefox扩展"></p>
+<p>上半部分是当前浏览器已安装的扩展，而下图就是firebug的所在位置，将xpi后缀改为zip解压后即可查看源代码。</p>
+<p>对于开发firebug这样高达上的扩展，我们暂时望尘莫及。开发微博助手、任务工具等使用者也很小众，之前用过一个网易的比价工具到是还不错，不过后来也不用了。那实际工作中我们可以做些什么小工具呢?</p>
+<h3 id="1、_栅格系统">1、 栅格系统</h3>
+<p>网页设计中流行的栅格系统，是运用固定的格子设计版面布局，风格工整简洁。其原理图如下：<br><img src="/img/ffExtension2.jpg" alt="Firefox扩展"><br>实现的效果图如下：<br><img src="/img/ffExtension3.png" alt="Firefox扩展"></p>
+<p>栅格系统提供两种预设50X20、60X30，还可以自定义规格。<br>第一个参数为栅格列的宽度（不包含沟槽）。<br>第二个参数为沟槽（guster）的宽度。</p>
+<h3 id="2、_发布商品">2、 发布商品</h3>
+<p>立方商城上线后，合作商家大部分早已进驻淘宝，需要将商品重新发到立方商城。发布商品就是从淘宝商品详情页抓取数据包括标题、图片、价格等信息发布到立方商城以减少人工操作。效果图如下：<br><img src="/img/ffExtension4.png" alt="Firefox扩展"></p>
+<h3 id="3、_自动化测试">3、 自动化测试</h3>
+<p>前端测试大部分依托于浏览器，显示是否良好、页面加载速度如何、热点区域探查。下图左侧显示了用户点击发布按钮到时间轴看到发布结果所用时间，由于不是单页面的加载时间而是页面跳转过程中所经历的时间，所以以浏览器插件的形式测试更为准确。这俨然可以成为一套用户体验系统。</p>
+<p><img src="/img/ffExtension5.png" alt="Firefox扩展"></p>
+</article><nav id="article-pagination"><a href="/2013/07/03/trans-ie11/" title="Previous article: 【翻译】Internet Explorer：“别再叫我IE”" class="prev">&larr; Previous article</a><a href="/2012/05/25/web-map/" title="Next article: 主流地图API比较" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

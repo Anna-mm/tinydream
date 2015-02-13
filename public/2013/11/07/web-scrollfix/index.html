@@ -1,0 +1,55 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>一滚两动——固定显示的元素超出可视区域部分如何显示完整&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>一滚两动——固定显示的元素超出可视区域部分如何显示完整</h2><div class="meta">Nov 7 2013</div><p>在页面布局及交互中，遇到这样一个问题：在发表文章页面有两栏布局，左侧是编辑区域，右侧为辅助功能如是否公开、添加标签、所属分类等。左侧编辑区域要求根据用户输入自动加高即内容高度不固定，右侧功能要跟随跟随左侧固定显示以便操作。问题就出现了，fix显示的元素高度超出可视区域部分如何显示完整？<br>简单的示意图如下：<br><img src="/img/scrollfix1.png" alt="跨域请求"></p>
+<p>可见，右侧滚动条全权负责左侧内容的滚动，那如何同时负责左右两个区域的滚动呢？他们的调度顺序是怎样的？思考中。。。</p>
+<p>是不是都是这样想的呢？大致分成以下三个阶段：<br>1、初始化，拖动滚动条左右侧正常滚动。<br>2、右侧滚动到顶端，固定显示（fixed），左侧继续滚动。<br>3、左右侧低端平行时，左右侧一起滚动。</p>
+<p>第三点恰恰是问题的切入点。效果的实现无碍都是scrollTop、height、offsetTop的计算，用代码分析一下这个过程：</p>
+<h4 id="1、当卷去高度大于右侧距顶端的高度，右侧固定显示，rightColFixFlag为阶段标志，值为0、1、2对应上述的三个阶段。">1、当卷去高度大于右侧距顶端的高度，右侧固定显示，rightColFixFlag为阶段标志，值为0、1、2对应上述的三个阶段。</h4>
+<pre><code><span class="keyword">if</span>(<span class="variable">$window</span>.scrollTop() &gt; <span class="variable">$rightColumn</span>.offset().top){
+    <span class="keyword">if</span>(rightColFixFlag == <span class="number">0</span>){
+        <span class="variable">$rightColumn</span>.css({<span class="string">"position"</span><span class="symbol">:</span> <span class="string">"fixed"</span>,<span class="string">"left"</span><span class="symbol">:</span> offsetLeft,<span class="string">"top"</span><span class="symbol">:</span> <span class="constant">DEFAULT_TOP</span>});<span class="regexp">//</span><span class="constant">DEFAULT_TOP</span>=<span class="number">0</span>
+            rightColFixFlag = <span class="number">1</span>;
+    }
+}
+<span class="keyword">else</span>{
+    <span class="variable">$rightColumn</span>.css({<span class="string">"position"</span><span class="symbol">:<span class="string">"static"</span></span>});
+    rightColFixFlag = <span class="number">0</span>;
+     rightTop = <span class="constant">DEFAULT_TOP</span>;
+}
+</code></pre><h4 id="2、_左右侧低端平行，两侧同时滚动。右侧仍为fixed显示，通过变化其top值完成滚动。">2、 左右侧低端平行，两侧同时滚动。右侧仍为fixed显示，通过变化其top值完成滚动。</h4>
+<p><img src="/img/scrollfix2.png" alt="跨域请求"><br><img src="/img/scrollfix3.png" alt="跨域请求"></p>
+<pre><code><span class="keyword">if</span>(option.rightColFixFlag == <span class="number">1</span>){
+    <span class="comment">//计算左右低端之间的距离        </span>
+    <span class="keyword">var</span> distance = <span class="variable">$leftColumn</span>.height() + <span class="variable">$leftColumn</span>.offset().top - <span class="variable">$window</span>.scrollTop() - <span class="variable">$rightColumn</span>.height()
+    <span class="comment">//左右侧低端平行           </span>
+    <span class="keyword">if</span>(distance  &lt;= <span class="number">0</span>){
+        <span class="comment">//计算左右侧低端平行时滚动条卷去高度。</span>
+        <span class="comment">//如果你的手劲刚刚好，某一次拖动恰好赶上这个接触点，那滚动条卷去高度就正好是$window.scrollTop()，一般情况下，你会错过这个点，使用distance修正。</span>
+        fixScrollTop = <span class="variable">$window</span>.scrollTop() + distance;
+        rightColFixFlag = <span class="number">2</span>;
+      }
+}
+<span class="keyword">if</span>(option.rightColFixFlag == <span class="number">2</span>){
+    <span class="comment">//计算右侧的top值，为相邻两次滚动的差值。</span>
+    rightTop -= (<span class="variable">$window</span>.scrollTop() - fixScrollTop);
+    fixScrollTop = <span class="variable">$window</span>.scrollTop();
+    <span class="comment">//计算左侧低端距离页面低端的高度</span>
+    offsetBot = <span class="variable">$document</span>.height() - <span class="variable">$leftColumn</span>.offset().top - <span class="variable">$leftColumn</span>.height();
+    <span class="comment">//计算右侧top的下限值</span>
+    rightColEndTop = <span class="variable">$window</span>.height() - <span class="variable">$rightColumn</span>.height() - offsetBot;
+    <span class="comment">//判断右侧top值处于哪个区间，(-∞，rightColEndTop]或(rightColEndTop，DEFAULT_TOP)或(DEFAULT_TOP，+∞)</span>
+    <span class="keyword">if</span>(rightTop &lt;= rightColEndTop){
+            <span class="comment">//右侧top值达到下限</span>
+          option.<span class="variable">$rightColumn</span>.css({<span class="string">"top"</span>: option.rightColEndTop});
+    }
+    <span class="keyword">if</span>(rightColEndTop &lt; rightTop &lt; DEFAULT_TOP){
+            <span class="variable">$rightColumn</span>.css({<span class="string">"top"</span>: option.rightTop});
+    }
+    <span class="keyword">if</span>(rightTop &gt; DEFAULT_TOP){
+        <span class="comment">//右侧top值达到上限</span>
+        <span class="variable">$rightColumn</span>.css({<span class="string">"top"</span>: DEFAULT_TOP});
+        rightColFixFlag = <span class="number">1</span>;
+        rightTop = DEFAULT_TOP;
+    }
+    <span class="comment">//rightTop==DEFAULT_TOP，disatance=0，滚动条正好滚动至左右侧底端平齐，可不做调整。</span>
+}
+</code></pre><p><img src="/img/scrollfix4.png" alt="跨域请求"></p>
+</article><nav id="article-pagination"><a href="/2013/11/13/js-observer/" title="Previous article: 走向观察者模式" class="prev">&larr; Previous article</a><a href="/2013/10/16/js-lint/" title="Next article: JSLint调研" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

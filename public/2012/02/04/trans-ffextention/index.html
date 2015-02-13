@@ -1,0 +1,168 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>【翻译】开发Firefox扩展&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>【翻译】开发Firefox扩展</h2><div class="meta">Feb 4 2012</div><p>译自<a href="https://developer.mozilla.org/en/Building_an_Extension" target="_blank" rel="external">https://developer.mozilla.org/en/Building_an_Extension</a>，意译非直译</p>
+<h2 id="简介">简介</h2>
+<p>这篇教程通过一些必要的步骤指导你开发一个简单的扩展——在火狐浏览器的状态面板（status bar panel）中加入一项“hello,World”。（ajiao注：事实上是加在了工具菜单中）<br>从firefox4（和其他的基于Mozilla 2版本的应用程序）开始有两种类型的扩展：</p>
+<ol>
+<li>传统的XUL扩展比较强大，但麻烦的是安装后需要重启浏览器；</li>
+<li>免重启的扩展，不需要安装后重启但是相比于传统扩展受限得多。<a href="https://addons.mozilla.org/en-US/developers/tools/builder" target="_blank" rel="external">Add-on SDK and the Add-on Builder</a>可以容易地用于开发免重启扩展。</li>
+</ol>
+<p>这篇文章说明如何开发传统的扩展。</p>
+<h2 id="快速开始">快速开始</h2>
+<p>这个扩展在<a href="kb.mozillazine.org/Getting_started_with_extension_development">another tutorial from MozillaZine Knowledge Base</a>上有逐行的代码解释</p>
+<h3 id="1、构建开发环境">1、构建开发环境</h3>
+<p>扩展打包成zip文件，或使用XPI文件系统(“zippy”发布的)打包。<br>典型的XPI文件如下：</p>
+<pre><code>my_extension.xpi：                       <span class="regexp">//</span>扩展名
+<span class="regexp">/install.rdf                            /</span>/扩展的信息（包括id、名称、版本号等）
+<span class="regexp">/chrome.manifest                          /</span>/通过chrome引擎注册，负责扩展的运行
+<span class="regexp">/chrome/</span>
+<span class="regexp">/chrome/content/</span>                        <span class="regexp">//</span>包括XUL <span class="keyword">and</span> JavaScript 文件
+<span class="regexp">/chrome/icons/default/</span>*                 <span class="regexp">//</span>扩展icon
+<span class="regexp">/chrome/locale/</span>*                        <span class="regexp">//</span>本地化
+<span class="regexp">/defaults/preferences/</span>*.js
+<span class="regexp">/plugins/</span>*
+<span class="regexp">/components/</span>*
+/components/cmdline.js
+</code></pre><p>我们要创建一个类似的文件结构，随便在某一个硬盘上新建一个文件夹（比如C:\extensions\my_extension\ or ~/extensions/my_extension/），里面新建一个名为chrome的文件夹，再在里面建一个名为content的文件夹。在文件夹的根目录下新建两个空文件，分别命名为chrome.manifest and install.rdf。在chrome/content文件夹中，新建一个文件，命名为sample.xul。那么，这个文件结构是这样的：</p>
+<pre><code>install<span class="preprocessor">.rdf</span>
+chrome<span class="preprocessor">.manifest</span>
+chrome\
+    content\
+        sample<span class="preprocessor">.xul</span>
+</code></pre><p>关于构建开发环境的其他信息请参考<a href="https://developer.mozilla.org/en/Setting_up_extension_development_environment" target="_blank" rel="external">Setting up extension development environment</a></p>
+<h3 id="2、编写instal-rdf">2、编写instal.rdf</h3>
+<p>打开文件，将以下代码放到里面.</p>
+<pre><code><span class="pi">&lt;?xml version="1.0"?&gt;</span>
+<span class="tag">&lt;<span class="title">RDF</span> <span class="attribute">xmlns</span>=<span class="value">"http://www.w3.org/1999/02/22-rdf-syntax-ns#"</span> <span class="attribute">xmlns:em</span>=<span class="value">"http://www.mozilla.org/2004/em-rdf#"</span>&gt;</span>    
+    <span class="tag">&lt;<span class="title">Description</span> <span class="attribute">about</span>=<span class="value">"urn:mozilla:install-manifest"</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">em:id</span>&gt;</span>sample@example.net<span class="tag">&lt;/<span class="title">em:id</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">em:version</span>&gt;</span>1.0<span class="tag">&lt;/<span class="title">em:version</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">em:type</span>&gt;</span>2<span class="tag">&lt;/<span class="title">em:type</span>&gt;</span>
+        <span class="comment">&lt;!-- Target Application this extension can install into,with minimum and maximum supported versions. --&gt;</span>
+        <span class="tag">&lt;<span class="title">em:targetApplication</span>&gt;</span>
+            <span class="tag">&lt;<span class="title">Description</span>&gt;</span>
+            <span class="tag">&lt;<span class="title">em:id</span>&gt;</span>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}<span class="tag">&lt;/<span class="title">em:id</span>&gt;</span>
+                <span class="tag">&lt;<span class="title">em:minVersion</span>&gt;</span>1.5<span class="tag">&lt;/<span class="title">em:minVersion</span>&gt;</span>
+                <span class="tag">&lt;<span class="title">em:maxVersion</span>&gt;</span>4.0.*<span class="tag">&lt;/<span class="title">em:maxVersion</span>&gt;</span>
+            <span class="tag">&lt;/<span class="title">Description</span>&gt;</span>
+        <span class="tag">&lt;/<span class="title">em:targetApplication</span>&gt;</span>
+        <span class="comment">&lt;!-- Front End MetaData --&gt;</span>
+        <span class="tag">&lt;<span class="title">em:name</span>&gt;</span>sample<span class="tag">&lt;/<span class="title">em:name</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">em:description</span>&gt;</span>A test extension<span class="tag">&lt;/<span class="title">em:description</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">em:creator</span>&gt;</span>Your Name Here<span class="tag">&lt;/<span class="title">em:creator</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">em:homepageURL</span>&gt;</span>http://www.example.com/<span class="tag">&lt;/<span class="title">em:homepageURL</span>&gt;</span>
+    <span class="tag">&lt;/<span class="title">Description</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">RDF</span>&gt;</span>
+</code></pre><p>1、sample@example.net：扩展ID，Email格式的字符串用来唯一确定你的扩展。或者是一个GUID。<br>2、<code>&lt;em:type</code>&gt;2<code>&lt;/em:type</code>&gt;：2是说这是一个扩展，如果要安装主题就是4，关于更多type参见<a href="https://developer.mozilla.org/en/Install_Manifests#type" target="_blank" rel="external">Install Manifests#type</a> 。<br>3、{ec8030f7-c20a-464f-9b0e-13a3a9e97384}：firefox的ID<br>4、1.5：扩展能够work的firefox的最低版本，需要确切的版本号，而不能用<em>代替。<br>5、4.0.</em>：扩展能够work的firefox的最高版本，4.0.*意味着扩展能够在firefox4.0和4.0.x以下的各版本中work。这个值必须小于等于 firefox已发布的版本。默认地，firefox10和以后版本不受这个最高版本限制，你可以通 过<em:strictcompatibility>强制限制。</em:strictcompatibility></p>
+<p>注：如果提示此文件有问题，在firefox中通过文件-&gt;打开文件命令可以看到返回的xml错误信息。<br>扩展至少要在Firefox 2.0.0.x上work的话，最高版本应该设置成”2.0.0.<em>“。<br>扩展至少要在Firefox 1.5.0.x上work的话，最高版本应该设置成”1.5.0.</em>“。<br>（ajiao注：此言应该是为了保险起见，避免firefox不兼容）</p>
+<p>想了解更多的required和optional属性请查看<a href="https://developer.mozilla.org/en/Install_Manifests" target="_blank" rel="external">Install Manifests</a></p>
+<h3 id="3、编写XUL文件">3、编写XUL文件</h3>
+<p>Firefox的用户接口（user interface）是用XUL和JS写的。XUL遵循XML语法，提供button、menu、toolbars、trees等组件（widgets），用户行为通过JS实现。</p>
+<p>为了扩展浏览器，我们增加或修改组件来改变浏览器的部分UI。通过插入新的XUL DOM 元素到浏览器窗口来增加组件，用script和绑定事件来修改组件。</p>
+<p>浏览器是通过一个名为browser.xul ($FIREFOX_INSTALL_DIR/chrome/browser.jar contains content/browser/browser.xul)的文件运行的（ajiao注：事实上，我没有找到这个文件），这个文件中有如下代码：</p>
+<pre><code>&lt;statusbar id=<span class="string">"status-bar"</span>&gt;
+    <span class="keyword">...</span> &lt;statusbarpanel&gt; <span class="keyword">...</span>
+&lt;/statusbar&gt;
+</code></pre><p><statusbar id="status-bar">是一个”覆盖点”（merge point），可以被XUL Overlay文件覆盖的地方。</statusbar></p>
+<p>XUL Overlays是一种在运行时（at run time）把其他的UI组件结合到一个XUL文件的方法，一个XUL Overlay是一个XUL文件，它把一些XUL片段插入到一个主（master）文件的特定覆盖点。这些XUL片段指定组件是应该insert、 remove还是modified。</p>
+<p>XUL Overlay 文件示例：</p>
+<pre><code><span class="pi">&lt;?xml version="1.0"?&gt;</span>
+<span class="tag">&lt;<span class="title">overlay</span> <span class="attribute">id</span>=<span class="value">"sample"</span> <span class="attribute">xmlns</span>=<span class="value">"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">statusbar</span> <span class="attribute">id</span>=<span class="value">"status-bar"</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">statusbarpanel</span> <span class="attribute">id</span>=<span class="value">"my-panel"</span> <span class="attribute">label</span>=<span class="value">"Hello, World"</span>  /&gt;</span>
+    <span class="tag">&lt;/<span class="title">statusbar</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">overlay</span>&gt;</span>
+</code></pre><p>这个叫status-bar的<statusbar>指定了一个覆盖点，这个覆盖点是浏览器窗口中我们想要追加的地方。子节点<statusbarpanel>是想插入覆盖点的一个新组件（widget）。把上面的代码保存到chrome/content下的sample.xul文件中。</statusbarpanel></statusbar></p>
+<p>关于更多的插入组件和通过覆盖修改用户接口的内容，请往下看。</p>
+<h3 id="Chrome_URIs">Chrome URIs</h3>
+<p>ajiao注：Chrome不是Google Chrome，可以理解为普通意义上的浏览器。<br>XUL 文件是”<a href="https://developer.mozilla.org/en/Chrome_Registration" target="_blank" rel="external">Chrome Packages</a>“ 的一部分，”Chrome Packages”涵盖了用户接口（user interface）的所有部件（components），这些部件可以通过chrome://URIs来访问（load）。而不是通过file://URI从硬盘上访问浏览器（尽管Firefox在系统中的位置可以在平台（platform）间和系统（system）间改变），MOzilla开发者提出了这个解决方案：创建指向XUL内容——这些是安装程序知道的——的URIs，<a href="chrome://browser/content/browser.xul" target="_blank" rel="external">chrome://browser/content/browser.xul</a>，把这个放到地址栏中。</p>
+<p>Chrome URIs包括以下部件：<br>1、chrome://：URI scheme (chrome)，它告诉Firefox的网络库（networking library）那是一个chrome URI。它指明URI 内容应该被视为（chrome）来处理，而不是视为一个网页（http）。<br>2、browser：包名本身确定了这是用户接口部件，它应该区别于你的应用程序，尽可能避免扩展之间的冲突。<br>3、content：请求的数据类型。有三种类型：content (XUL，JavaScript，XBL bindings等决定了应用程序UI的结构和行为)，locale (DTD，.properties files等包含了UI的本地化的字符串)，and skin (CSS and images等确定了UI的theme主题)。<br>4、browser.xul：要访问的文件路径。</p>
+<p>那么，<a href="chrome://foo/skin/bar.png" target="_blank" rel="external">chrome://foo/skin/bar.png</a>就是访问foo主题的skin下的bar.png。</p>
+<p>当你通过Chrome URI访问资源时，Firefox通过Chrome注册信息（Registry）把这些URIs转换成硬盘上（或jar包中）实际的资源文件。</p>
+<h3 id="4、编写chrome-manifest文件">4、编写chrome.manifest文件</h3>
+<p>关于Chrome Manifests和其支持的属性的更多信息，请参看Chrome Manifest。<br>打开文件，加入以下代码：</p>
+<pre><code>content     <span class="keyword">sample</span>    chrome/content/
+</code></pre><p>不要忘记结尾的斜杠“/”，没有它这个包不能被注册。有以下三点说明：<br>1、content ：chrome package的内容类型（type of material within a chrome package）。<br>2、sample ：chrome package名（包名一定要用小写字母，Firefox的早期版本不支持大写或驼峰命名）。<br>3、chrome/content/：chrome package文件的位置。<br>这一行代码就是说明有一个名为sample的chrome package，可以在相对于chrome.manifest所在目录的chrome/content位置下找到这些资源。</p>
+<p>你还需要告诉Firefox把你的覆盖点合并到浏览器窗口中，加入以下代码：<br>overlay <a href="chrome://browser/content/browser.xul" target="_blank" rel="external">chrome://browser/content/browser.xul</a> <a href="chrome://sample/content/sample.xul" target="_blank" rel="external">chrome://sample/content/sample.xul</a><br>这就是告诉Firefox加载browser.xul时要把sample.xul合并进去。</p>
+<h3 id="5、测试">5、测试</h3>
+<p>首先，应该告诉Firefox有你这么一个扩展。在Firefox 2.0或更高版本中，你可以把Firefox指向你开发的那个扩展对应的文件夹，那每次重启时就会加载这个扩展。</p>
+<p>1、找到<a href="kb.mozillazine.org/Profile_folder">profile folder</a>（这个文件夹是第一个启动Mozilla时自动创建到你本地的，保存了程序的默认信息，在win7下，可以通过命令行%APPDATA%\Mozilla\Firefox\Profiles打开文件），你的工作就是在这个文件夹里。<br>2、打开extensions/这个文件夹，如果需要的话自建一个。<br>3、创建一个文本文件，把你的扩展文件的全路径(e.g. C:\extensions\my_extension\ or ~/extensions/my_extension/)写到里面。（windows用户应该保留操作系统的斜杠，并且要以斜杠结尾，去掉末尾的空格。）<br>4、保存文件，命名为你的扩展ID （e.g. <a href="sample@example.net">sample@example.net</a>），没有文件后缀。</p>
+<p>现在就可以测试你的扩展了。<br>启动Firefox，检测到有文本链接到你的扩展目录下，安装扩展。当浏览器完全显示的时候，你可以在状态面板的右侧（on the right side of the status bar panel）看到“Hello, World!”（ajiao注，事实上是在工具菜单中）<br>现在，你可以回去编写.XUL文件了，关闭然后启动Firefox，就能看到你想看到的。</p>
+<h3 id="6、打包">6、打包</h3>
+<p>你的扩展正常work了，就可以打包了。<br>把你扩展文件夹里面的内容打成zip包（注意是文件夹里面的内容，不是文件夹本身。ajiao注：开始就卡在这个盲点上了。），然后重命名，以.xpi作为后缀。</p>
+<ul>
+<li>在XP中，选中扩展文件夹里的所有文件包括子文件，右击选择“发送到—&gt;压缩zipped文件夹”。一个zip文件就创建好了。</li>
+<li>在Mac OS X下，选择扩展文件夹里的所有文件，右击选择“Create Archive of…”就可以了。然后，自从Mac OS X增加了用来追踪文件元数据的隐藏文件夹，你就不应该使用终端，而是删除隐藏文件夹（那些以时间命名的）在命令行中敲入zip命令来创建zip文件。</li>
+<li>在Linux下，同样通过命令完成。</li>
+</ul>
+<p>如果你安装了“Extension Builder”这个扩展，它能够帮你编译成.xpi文件（Tools -&gt; Extension Developer -&gt; Extension Builder）。指定生成目录为扩展所在的目录（install.rdf 等），然后敲击Build Extension按钮。这个扩展有很多工具让开发变得更容易。</p>
+<p>现在，上传你的.xpi文件到你的服务器上，确保它被服务为application/x-xpinstall。你可以link到它，让别人也可以下载和安装。如果只是测试我们的.xpi文件，可以直接拖到工具-&gt;附加组件中。（ajiao注：直接拖到浏览器中就可以）</p>
+<h3 id="使用addons-mozilla-org（ajiao注：这里是广告么？）">使用addons.mozilla.org（ajiao注：这里是广告么？）</h3>
+<p>Mozilla Add-ons是一个分布式（distribution）站点，可以免费寄宿（host）你的扩展。你的扩展可能非常受欢迎，也可以寄宿在Mozilla的映射（mirror）网络上来保证下载。Mozilla站点提供给用户更简单的安装方式，只有你上传了新的版本，它就会自动地到达（available to）使用者那里。另外，Mozilla Add-ons允许用户评论，并为你的扩展提供反馈。强烈推荐你用Mozilla Add-ons发布扩展。访问Visit <a href="addons.mozilla.org/developers/">http://addons.mozilla.org/developers/</a>，创建一个账户就可以发布你的扩展了。</p>
+<p>注：如果有一个更好的描述和截图，你的扩展会很快通过和被下载的。</p>
+<h2 id="MORE">MORE</h2>
+<h3 id="7、更多的XUL_Overlays">7、更多的XUL Overlays</h3>
+<p>除了把UI 组件加到覆盖点（merge point），你可以在Overlays里面用如下XUL片段：</p>
+<ul>
+<li><p>修改覆盖点的属性，例如隐藏状态条。</p>
+<pre><code>  <span class="tag">&lt;<span class="title">statusbar</span> <span class="attribute">id</span>=<span class="value">"status-bar"</span> <span class="attribute">hidden</span>=<span class="value">"true"</span> /&gt;</span>
+</code></pre></li>
+<li><p>从主文件中移出覆盖点，例如</p>
+<pre><code>  <span class="tag">&lt;<span class="title">statusbar</span> <span class="attribute">id</span>=<span class="value">"status-bar"</span> <span class="attribute">removeelement</span>=<span class="value">"true"</span> /&gt;</span>
+</code></pre></li>
+<li><p>控制插入组件的位置：</p>
+<pre><code>  &lt;statusbarpanel position=<span class="string">"1"</span> <span class="keyword">...</span>  /&gt;
+  &lt;statusbarpanel insertbefore=<span class="string">"other-id"</span> <span class="keyword">...</span>  /&gt;
+  &lt;statusbarpanel insertafter=<span class="string">"other-id"</span> <span class="keyword">...</span>  /&gt;
+</code></pre></li>
+</ul>
+<h3 id="8、创建新的User_Interface_Components">8、创建新的User Interface Components</h3>
+<p>你可以用单独的.xul文件创建自己的窗体和对话框，在JS文件中执行用户行为来提供功能，用DOM方法来操作用户组件，在.css文件中加入图片，设置样式。关于XUL开发的更多文档请参考<a href="https://developer.mozilla.org/en/XUL" target="_blank" rel="external">XUL</a>。<br>（ajiao注：XUL：XML User Interface Language，一种基于XML的语言，可以开发多功能的跨平台的应用程序，无论是否联网都可以运行。这些程序很容易通过文本，图片，布局来自定义。）</p>
+<h3 id="9、默认文件">9、默认文件</h3>
+<p>用来构成用户的基本信息（seed a user’s profile）的默认文件，位于扩展文件夹的根目录下。默认偏好（preferences）的JS文件应该在defaults/preferences/下，当Firefox的偏好系统（defaults/preferences/）开始启动的时候，它们会被自动载入。访问<a href="https://developer.mozilla.org/en/Preferences_API" target="_blank" rel="external">Preferences API</a>.了解更多信息。<br>默认偏好文件的实例：</p>
+<pre><code><span class="function">pref(<span class="string">"extensions.sample.username"</span>, <span class="string">"Joe"</span>)</span>; <span class="comment">//a string pref</span>
+<span class="function">pref(<span class="string">"extensions.sample.sort"</span>, <span class="number">2</span>)</span>; <span class="comment">//an int pref</span>
+<span class="function">pref(<span class="string">"extensions.sample.showAdvanced"</span>, true)</span>; <span class="comment">//a boolean pref</span>
+</code></pre><h3 id="10、XPCOM_Components">10、XPCOM Components</h3>
+<p>Firefox在扩展中支持<a href="https://developer.mozilla.org/en/XPCOM" target="_blank" rel="external">XPCOM</a> components。你可以用JS 或C++（用<a href="https://developer.mozilla.org/en/Gecko_SDK" target="_blank" rel="external">Gecko SDK</a>）很容易地创建自己的components（ajiao注：XPCOM类似于Microsoft COM，一种跨平台的component object model）。把你的.js、.dll文件都放到components/目录下，安装扩展后的Firefox在第一次运行的时候就会自动注册它们。</p>
+<p>更多的信息参考 <a href="https://developer.mozilla.org/en/How_to_Build_an_XPCOM_Component_in_Javascript" target="_blank" rel="external">How to Build an XPCOM Component in Javascript</a>, <a href="https://developer.mozilla.org/en/How_to_build_a_binary_XPCOM_component_using_Visual_Studio" target="_blank" rel="external">How to build a binary XPCOM component using Visual Studio</a> and the <a href="https://developer.mozilla.org/en/Creating_XPCOM_Components" target="_blank" rel="external">Creating XPCOM Components</a> book.</p>
+<p><strong>Application Command Line</strong></p>
+<p>自定义的XPCOM components的一个可能的用法就是增加一个命令行的处理到Firefox中，你可以用这种方法把扩展作为一个应用程序来运行。</p>
+<pre><code>    firefox<span class="preprocessor">.exe</span> -myapp
+</code></pre><p>更多信息请参考 <a href="https://developer.mozilla.org/en/Chrome/Command_Line" target="_blank" rel="external">Chrome: Command Line</a> and a <a href="forums.mozillazine.org/viewtopic.php?t=365297">forum discussion</a></p>
+<p><strong>Localization</strong></p>
+<p>为了支持多语言，你可以用<a href="https://developer.mozilla.org/en/XUL_Tutorial/Localization" target="_blank" rel="external">entities</a>和<a href="https://developer.mozilla.org/en/XUL_Tutorial/Property_Files" target="_blank" rel="external">string bundles</a>把字符串从你的内容中拆分出来。在开发过程中做这件事更容易，比起回过头来做。</p>
+<p>本地化信息存储在扩展的locale目录下。比如，你要在扩展里加一个locale，在chrome目录里（即content的同级目录下）嵌套创建出locale/en-US这个目录，然后把下面这行加到chrome.manifest文件里。</p>
+<pre><code>locale sample en<span class="attribute">-US</span> chrome/locale/en<span class="attribute">-US</span><span class="subst">/</span>
+</code></pre><p>要在XUL中创建本地化的属性，你可以把这些值放在一个.dtd文件里，.dtd文件放在locale目录下，代码如下：</p>
+<pre><code><span class="tag">&lt;<span class="title">!ENTITY</span>  <span class="attribute">my-panel.label</span>  "<span class="attribute">Hello</span>, <span class="attribute">World</span>"&gt;</span>
+    在XUL文件的顶部(在<span class="pi">&lt;?xml version"1.0"?&gt;</span>的下面)加入如下代码：
+<span class="pi">&lt;?xml version="1.0"?&gt;</span>
+<span class="doctype">&lt;!DOCTYPE window SYSTEM "chrome://packagename/locale/filename.dtd"&gt;</span>
+...
+</code></pre><p>XUL文档的根节点的<a href="https://developer.mozilla.org/En/DOM/Node.localName" target="_blank" rel="external">localName</a> 值是window, “SYSTEM”属性的值是指向entity file（ajiao注：就是DTD文件）的chrome URI.</p>
+<p>在我们的示例扩展中，把根节点window换成overlay，packagename写成sample，filename.dtd写成sample.dtd。怎么用这个entities呢，修改XUL如下：</p>
+<pre><code><span class="tag">&lt;<span class="title">statusbarpanel</span> <span class="attribute">id</span>=<span class="value">"my-panel"</span> <span class="attribute">label</span>=<span class="value">"&amp;my-panel.label;"</span>  /&gt;</span>
+</code></pre><p>Chrome注册信息会确保entity file被加载。<br>也可以给script中使用的字符串创建一个属性文件，就是一个每一行都是这种格式的文本文件。<br>key=value<br>然后用<a href="https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIStringBundleService" target="_blank" rel="external">nsIStringBundleService</a> /<a href="https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIStringBundle" target="_blank" rel="external">nsIStringBundle</a> or the <a href="https://developer.mozilla.org/en/XUL/stringbundle" target="_blank" rel="external">stringbundle</a>标签把相应的值load到script中。</p>
+<h3 id="11、了解浏览器">11、了解浏览器</h3>
+<p>用<a href="https://developer.mozilla.org/en/DOM_Inspector" target="_blank" rel="external">DOM Inspector</a>（ajiao注：一个扩展）检查你想扩展的浏览器窗口或是其他的XUL窗口。<br>提示：Firefox在默认情况下不安装DOM Inspector，从Firefox 3 Beta 4版本起，它单独作为一种扩展。如果你的浏览器是早期版本，工具菜单中没有“DOM Inspector”，那就用自定义安装方式选择DOM Inspector重新安装。</p>
+<p>在DOM Inspector工具条的左上方有个点选式（point-and-click）按钮，在XUL窗口点击一个节点来选择它，DOM树就会跳到指定的节点。</p>
+<p>用DOM Inspector的右侧面板可以发现覆盖点的ID，你可以用来插入你的元素。如果你没有发现你可以插入（merge into）的带ID的元素，你可能需要在overlay（ajiao注：overlay.xul）中加入一个script，当load事件运行到主XUL窗口时（the load event fires on the master XUL window）插入你的元素。</p>
+<p><strong>Debugging Extensions</strong></p>
+<p>Debug分析工具</p>
+<ul>
+<li><a href="https://developer.mozilla.org/en/DOM_Inspector" target="_blank" rel="external">DOM Inspector</a>——检测已生效的属性、DOM结构、CSS样式（一个找出为什么样式没有生效的工具）</li>
+<li><a href="https://developer.mozilla.org/en/Venkman" target="_blank" rel="external">Venkman</a>——在JS中设置断点，并inspect call stacks</li>
+<li>JS中的<a href="https://developer.mozilla.org/en/JavaScript/Reference/Functions_and_function_scope/arguments/callee" target="_blank" rel="external">arguments.callee.caller</a>——访问一个方法的call stack</li>
+</ul>
+<p>函数调试</p>
+<ul>
+<li>用<a href="https://developer.mozilla.org/en/DOM/window.dump" target="_blank" rel="external">dump</a>(“string”)（详情看链接，它需要一些配置才能正常work）</li>
+<li>用<a href="https://developer.mozilla.org/en/Components.utils.reportError" target="_blank" rel="external">Components.utils.reportError()</a> or <a href="https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIConsoleService" target="_blank" rel="external">nsIConsoleService</a>输出（log to）到控制台。</li>
+</ul>
+<p>高级调试</p>
+<ul>
+<li>在Firefox中设置断点运行，对于有经验的开发者来说，这是诊断问题的最快方法。详情请看<a href="https://developer.mozilla.org/En/Developer_Guide/Build_Instructions" target="_blank" rel="external">Build Documentation</a> and <a href="https://developer.mozilla.org/En/Developer_Guide" target="_blank" rel="external">Developing Mozilla</a></li>
+<li>更多的帮助提示请看<a href="https://developer.mozilla.org/en/Debugging_a_XULRunner_Application" target="_blank" rel="external">Debugging a XULRunner Application</a></li>
+</ul>
+<h3 id="12、更多信息">12、更多信息</h3>
+<p><a href="https://developer.mozilla.org/en/Extension_Frequently_Asked_Questions" target="_blank" rel="external">Extension FAQ</a><br><a href="https://developer.mozilla.org/en/Extensions" target="_blank" rel="external">Extensions</a></p>
+</article><nav id="article-pagination"><a href="/2012/05/25/web-map/" title="Previous article: 主流地图API比较" class="prev">&larr; Previous article</a><a href="/2011/12/22/css-wordbreak/" title="Next article: CSS3中文本自动换行的样式说明" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

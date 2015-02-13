@@ -1,0 +1,52 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>IE6兼容性专题七——0ms延迟&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>IE6兼容性专题七——0ms延迟</h2><div class="meta">Nov 20 2011</div><p>在IE6下处理透明图片后，“回到顶部”不见了。尝试着延迟处理确实可以解决问题，可是事实上不需要延迟，那就干脆0ms延迟吧，也同样达到目的。网上搜索之后才发现这已经成为js处理的“潜规则”之一了，也一度成为解决了很多前端疑难杂症的法宝，准确地说，不是0ms，而是16ms延迟。</p>
+<blockquote>
+<p>setTimeout的存在会导致CPU中断调度，如果两个中断之间时间太短会导致CPU性能消耗很高，同时影响能耗。于是微软和英特公司为了解决这个问题，就约定每个中断之间的间隔是15.6ms（64 fps）所以就是我们常见的约等于16ms的间隔，不过随着web的要求不断增加，大家对这个要求希望是放宽的态度，于是在高端浏览器，这个性能被提升了4倍左右，所以在chrome，IE10等浏览器，setTimeout的间隔缩短到了 4ms（250 fps）。</p>
+</blockquote>
+<p>以下是透明图片处理的公用方法：</p>
+<pre><code><span class="comment">//给所有PNG图片加上样式”fixpng”</span>
+$(<span class="string">"img[src$='.png'],img[src$='.PNG']"</span>).not($(<span class="string">"#unfixpng"</span>)).addClass(<span class="string">"fixpng"</span>);
+
+setTimeout(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+    <span class="comment">//遍历所有div、a标签，当其有背景图片且背景图片为PNG图片时加上样式”fixpng”</span>
+    $(<span class="string">"div,a"</span>).each(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        <span class="keyword">var</span> b = $(<span class="keyword">this</span>).css(<span class="string">"background-image"</span>);
+        <span class="keyword">if</span>(b!=<span class="literal">undefined</span> &amp;&amp; <span class="regexp">/.png|.PNG/</span>.test(b)){
+            $(<span class="keyword">this</span>).addClass(<span class="string">"fixpng"</span>);
+        }
+    })
+},<span class="number">0</span>)
+</code></pre><p>另外一个用到此方法的实例是：礼尚往来，点击我收到的礼物，选择全选后，选中框不见了。</p>
+<p><img src="/img/ie6bug71.png" alt="ie6bug"></p>
+<p>代码结构：</p>
+<pre><code><span class="tag">&lt;<span class="title">a</span> <span class="attribute">class</span>=<span class="value">"all_button"</span> <span class="attribute">href</span>=<span class="value">"javascript:void(0);"</span> <span class="attribute">id</span>=<span class="value">"present_check_mark"</span>&gt;</span>全选<span class="tag">&lt;/<span class="title">a</span>&gt;</span>
+</code></pre><p>样式：</p>
+<pre><code><span class="class">.all_button</span> <span class="rules">{
+    <span class="rule"><span class="attribute">background</span>:<span class="value"> <span class="function">url(<span class="string">"/skin/message/images/all_nochecked.png"</span>)</span> no-repeat scroll right center transparent</span></span>;
+<span class="rule">}</span></span>    
+</code></pre><p>Checkbox框是一张背景图。当点击之后，更换为另外一张选中后的背景图。<br>JS代码：</p>
+<pre><code>jQuery.fn.extend({
+        <span class="comment">//全选/全不选</span>
+        chooseAll:<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+            <span class="keyword">return</span> <span class="keyword">this</span>.click(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+                <span class="keyword">var</span> chooseFlag = $(<span class="keyword">this</span>).hasClass(<span class="string">"all_checked"</span>);
+                <span class="keyword">if</span>(chooseFlag){
+                    $(<span class="keyword">this</span>).removeClass(<span class="string">"all_checked"</span>);
+                }<span class="keyword">else</span>{
+                    $(<span class="keyword">this</span>).addClass(<span class="string">"all_checked"</span>);
+    }                                 $(<span class="string">"input[type='checkbox'][name='presentIds']"</span>).each(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+                    $(<span class="keyword">this</span>).attr(<span class="string">"checked"</span>, !chooseFlag);
+                });
+            });
+});
+</code></pre><p>这个bug很不容易再现，它不是每次点击都消失，而且一旦checkbox出现再也不消失了。除非你关闭浏览器再重新打开，相当恶心。调试发现，如果在加入样式”all_checked”前随便alert个什么东西，问题就解决了。所以就想到了</p>
+<pre><code><span class="keyword">var</span> that = $(<span class="keyword">this</span>);
+setTimeout(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+    that.addClass(<span class="string">"all_checked"</span>);
+},<span class="number">0</span>);
+</code></pre><p>不过，还要注意一点，setTimeout中的this指向的是window，不再是单击的事件源了，要先将$(this)保存一下。</p>
+<p>总结：</p>
+<ol>
+<li>正常情况下javascript都是按照顺序执行的。但是我们可能让该语句后面的语句执行完再执行本身，这时就可以用到setTimeout延时0ms来实现了。</li>
+<li>在事件中，setTimeout 会在其完成当前任何延宕事件的事件处理器的执行，以及完成文档当前状态更新后，告诉浏览器去启用 setTimeout 内注册的函数。</li>
+</ol>
+</article><nav id="article-pagination"><a href="/2011/11/26/web-triangle/" title="Previous article: 跨浏览器纯CSS实现的三角之美" class="prev">&larr; Previous article</a><a href="/2011/11/18/ie6bug6/" title="Next article: IE6兼容性专题六——PNG图片的处理" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

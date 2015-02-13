@@ -1,0 +1,78 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>JS压缩方案升级&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>JS压缩方案升级</h2><div class="meta">Aug 29 2013</div><h2 id="1、现状">1、现状</h2>
+<p>使用javascript Obfuscator压缩。<br>缺点：手动执行、界面操作。<br>目的：选择更方便的压缩工具，支持脚本处理。</p>
+<h2 id="2、备选方案">2、备选方案</h2>
+<p>方案一：YUI compressor。<br>简称YC，L06 JS代码经Obfuscator压缩后10.5M，YUI compressor压缩后8.5M，混淆后8.49M。</p>
+<p>方案二：Google closure compiler<br>简称CC，不仅是一个compressor，YC只做了词法上扫描，CC更是一个compiler。它的高级优化方式提出了各种“激进”的方法破坏代码，达到压缩的目的。如果能掌控它的压缩规则，代码可以压缩至极小。同时也有很强的代码约束和检查。</p>
+<p>方案三： UglifyJS<br>jQuery v1.5已将压缩工具从Google closure compiler切换到UglifyJS，jQuery的青睐使其大红大紫，它的压缩策略比CC更简单安全些。UglifyJS基于node，避免不了安装node、npm、uglifyjs。<br>从安全平稳、易实施的角度看，还是使用YUI compressor + ant结合的方式，已更新了测试服务器上的ant脚本，具体参见<br><code>/root/develop/lifeix_product/build.xml</code>。</p>
+<p>注：混淆压缩后，我们的代码也会变得很屌，一堆a、b、c、d、e、f、g神马的，哇咔咔^_^！</p>
+<h2 id="3、本地使用YUI_compressor">3、本地使用YUI compressor</h2>
+<h3 id="方法一：命令行">方法一：命令行</h3>
+<pre><code>$ java -jar yuicompressor-<span class="built_in">x</span><span class="preprocessor">.y</span><span class="preprocessor">.z</span><span class="preprocessor">.jar</span>
+</code></pre><p>用法: <code>java -jar yuicompressor-x.y.z.jar [options] [input file]</code><br>下面的命令将压缩myfile.js文件并输出为myfile-min.js (x.y.z 为具体的版本号):<br><code>java -jar yuicompressor-x.y.z.jar myfile.js -o myfile-min.js</code></p>
+<pre><code>Global Options
+-<span class="ruby">h, --help              显示帮助信息
+</span>-<span class="ruby">-type &lt;js|css&gt;         指明需要压缩的文件是js还是css。
+</span>-<span class="ruby">-charset &lt;charset&gt;     指明需要压缩的文件的 &lt;charset&gt;
+</span>-<span class="ruby">-line-<span class="keyword">break</span> &lt;column&gt;   在指定的列换行
+</span>-<span class="ruby">o &lt;file&gt;               指定输出文件 &lt;file&gt;。默认为标准输出（屏幕）。
+</span>
+JavaScript Options
+-<span class="ruby">-warn                  打印代码中的错误信息
+</span>-<span class="ruby">-nomunge             只压缩，不混淆
+</span>-<span class="ruby">-preserve-semi         保留所有分号
+</span>-<span class="ruby">-preserve-strings      <span class="constant">Do</span> <span class="keyword">not</span> merge concatenated string literals, <span class="constant">Use</span> this option to specify that concatenated string literals should never be merged.</span>
+</code></pre><p>注：命令行也支持批处理，但是据本人实践，只针对同一级目录下的多文件处理，不支持嵌套目录。</p>
+<h3 id="方法二：ant脚本">方法二：ant脚本</h3>
+<p>与测试服务器的更新脚本相似。</p>
+<pre><code><span class="tag">&lt;<span class="title">target</span> <span class="attribute">name</span>=<span class="value">"compress"</span>  <span class="attribute">description</span>=<span class="value">"Compress"</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">echo</span> <span class="attribute">message</span> =<span class="value">"begin to compress the js file."</span> /&gt;</span>
+    <span class="tag">&lt;<span class="title">apply</span> <span class="attribute">executable</span>=<span class="value">"java"</span> <span class="attribute">dest</span>=<span class="value">"js"</span> <span class="attribute">parallel</span>=<span class="value">"false"</span> <span class="attribute">failonerror</span>=<span class="value">"true"</span> <span class="attribute">append</span>=<span class="value">"false"</span> <span class="attribute">force</span>=<span class="value">"true"</span>&gt;</span>
+       <span class="tag">&lt;<span class="title">fileset</span> <span class="attribute">dir</span>=<span class="value">"js"</span> <span class="attribute">includes</span>=<span class="value">"**/*.js"</span> /&gt;</span>
+       <span class="tag">&lt;<span class="title">arg</span> <span class="attribute">line</span>=<span class="value">"-jar"</span> /&gt;</span>
+       <span class="tag">&lt;<span class="title">arg</span> <span class="attribute">path</span>=<span class="value">"lib/yuicompressor-2.4.6.jar"</span> /&gt;</span>
+       <span class="tag">&lt;<span class="title">arg</span> <span class="attribute">line</span>=<span class="value">"--charset utf-8"</span> /&gt;</span>
+       <span class="tag">&lt;<span class="title">srcfile</span> /&gt;</span>
+       <span class="tag">&lt;<span class="title">arg</span> <span class="attribute">line</span>=<span class="value">"-o"</span> /&gt;</span>
+       <span class="tag">&lt;<span class="title">mapper</span> <span class="attribute">type</span>=<span class="value">"glob"</span> <span class="attribute">from</span>=<span class="value">"*.js"</span> <span class="attribute">to</span>=<span class="value">"*.js"</span> /&gt;</span>
+       <span class="tag">&lt;<span class="title">targetfile</span> /&gt;</span>
+        <span class="comment">&lt;!--&lt;arg line="--nomunge " /&gt;--&gt;</span>
+    <span class="tag">&lt;/<span class="title">apply</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">echo</span> <span class="attribute">message</span> =<span class="value">"compress the js end."</span> /&gt;</span>
+<span class="tag">&lt;/<span class="title">target</span>&gt;</span>
+</code></pre><p>注意<code>dest=&quot;js&quot;</code>、<code>dir=&quot;js&quot;</code> 、<code>lib/yuicompressor-2.4.6.jar</code>是文件相对路径。设置Dest为生成文件的目标路径，设置dir为待处理文件的路径。Arg path为YUI compressor路径。</p>
+<h3 id="方法三：右键压缩">方法三：右键压缩</h3>
+<ol>
+<li><p>制作批处理文件</p>
+<pre><code> <span class="variable">@echo</span> off
+ <span class="symbol">:</span><span class="symbol">:</span>设置<span class="constant">YUI</span> <span class="constant">Compressor</span>启动目录
+ <span class="constant">SET</span> <span class="constant">YUIFOLDER</span>=<span class="constant">D</span><span class="symbol">:</span>\tool\js_compress
+ <span class="symbol">:</span><span class="symbol">:</span>设置你的<span class="constant">JS</span>和<span class="constant">CSS</span>根目录，脚本会自动按树层次查找和压缩所有的<span class="constant">JS</span> 
+ <span class="constant">SET</span> <span class="constant">JSFOLDER</span>=<span class="constant">D</span><span class="symbol">:</span>\tool\js_compress\js
+
+ <span class="constant">::Check</span> <span class="constant">Directories</span>.
+ <span class="constant">IF</span> <span class="constant">NOT</span> <span class="constant">EXIST</span> %<span class="constant">YUIFOLDER</span>% <span class="constant">ECHO</span> <span class="constant">Error</span><span class="symbol">:</span> <span class="constant">Can</span><span class="string">'t find directory "YUIFOLDER". 
+ IF NOT EXIST %JSFOLDER% ECHO Error: Can'</span>t find directory <span class="string">"JSFOLDER"</span>.
+
+ <span class="constant">::Compress</span>.
+ <span class="keyword">for</span> /r . <span class="string">%%a in (*.js) do ( 
+     for /f "usebackq tokens=*" %</span>%i <span class="keyword">in</span> (<span class="string">"%%a"</span>) <span class="keyword">do</span> (
+         set line = <span class="string">%%i
+         set "line = !line:SPEED=wangfj!"
+     )
+     echo compress %</span>%~a ...
+     java -jar %<span class="constant">YUIFOLDER</span>%\yuicompressor-<span class="number">2.4</span>.<span class="number">6</span>.jar --charset <span class="constant">UTF</span>-<span class="number">8</span> <span class="string">%%~fa -o %</span>%~fa
+ )
+ echo compress finished!
+ pause &amp; exit
+</code></pre></li>
+<li><p>制作注册表文件</p>
+</li>
+</ol>
+<p>将批处理文件写入右键菜单的“Compress JS using YUI Compressor”。</p>
+<pre><code>Windows Registry Editor Version 5.00
+<span class="special">[</span>HKEY_CLASSES_ROOT<span class="command">\AllFilesystemObjects</span><span class="command">\shell</span><span class="special">]</span>
+<span class="special">[</span>HKEY_CLASSES_ROOT<span class="command">\AllFilesystemObjects</span><span class="command">\shell</span><span class="command">\Compress</span> JS using YUI Compressor<span class="special">]</span>
+<span class="special">[</span>HKEY_CLASSES_ROOT<span class="command">\AllFilesystemObjects</span><span class="command">\shell</span><span class="command">\Compress</span> JS using YUI Compressor<span class="command">\command</span><span class="special">]</span>
+@="D:<span class="command">\\</span>tool<span class="command">\\</span>js_compress<span class="command">\\</span>yuicompressor.bat <span class="comment">%1"</span>
+</code></pre><p>双击此文件导入信息到注册表。</p>
+</article><nav id="article-pagination"><a href="/2013/10/08/trans-websql/" title="Previous article: 【翻译】Web SQL数据库介绍" class="prev">&larr; Previous article</a><a href="/2013/07/03/trans-ie11/" title="Next article: 【翻译】Internet Explorer：“别再叫我IE”" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

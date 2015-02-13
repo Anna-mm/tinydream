@@ -1,0 +1,108 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>jQuery事件系统三&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>jQuery事件系统三</h2><div class="meta">Oct 13 2014</div><p>上一节通过给DOM元素添加自定义数据引出jQuery.data这个数据缓存模块，这是数据缓存系统的另一大重头戏，这一节就好好说说jQuery.data.<br>再看jquery源码之前大概大概明确几个要点：<br>1、jQuery.expando = “jQuery” + ( jQuery.fn.jquery + Math.random() ).replace( /\D/g, “” )，即jQuery＋版本号＋随机数；<br>2、jQuery.data方法通过参数的不同，可以有几种用法：为DOM元素或Javascript对象设置任意类型的数据，或返回指定名称的数据，或返回关联的数据缓存对象。<br>3、数据缓存对象上区分内部数据和自定义数据，避免jQuery内部使用的数据和用户自定义的数据发生冲突。<br>._data()设置的数据为内部数据，直接存储在关联的数据存储对象上，如事件缓存数据。<br>.data()设置的数据为自定义数据，存储在关联的数据缓存对象的属性data上；如用户通过data-*自定义数据。</p>
+<pre><code> <span class="variable">$(</span><span class="string">".content"</span>).data({<span class="string">"tagName"</span><span class="symbol">:<span class="string">"div"</span></span>,<span class="string">"className"</span><span class="symbol">:<span class="string">"content"</span></span>});
+</code></pre><p> 在上节栗子中设置content元素的自定义属性如下，存储位置如下：</p>
+<p> <img src="/img/jsevent3.png" alt="数据缓存系统"></p>
+<p> 总结一下：上节中通过jQuery._data设置DOM元素的内部属性，事实上是通过jQuery.data实现的，只是传递pvt参数为true，在jQuery.cache上顺序挂上key值为1、2、3…依此类推的数据缓存对象。同时设置DOM元素本身的属性elem[ jQuery.expando ] = id；以此来关联数据缓存系统。</p>
+<pre><code>jQuery.extend({
+    cache: {},<span class="comment">//事件缓存系统</span>
+    deletedIds: [],
+    uuid: <span class="number">0</span>,<span class="comment">// uuid初始化</span>
+    <span class="comment">// 生成类似于jQuery18005268001211807132这样的随机数（），避免与用户的自定义属性名冲突</span>
+    expando: <span class="string">"jQuery"</span> + ( jQuery.fn.jquery + <span class="built_in">Math</span>.random() ).replace( <span class="regexp">/\D/g</span>, <span class="string">""</span> ),
+    <span class="comment">//jQuery.noData中存放了不支持扩展属性的embed、object、applet元素的节点名称。</span>
+    noData: {
+        <span class="string">"embed"</span>: <span class="literal">true</span>,
+        <span class="comment">// Ban all objects except for Flash (which handle expandos)</span>
+        <span class="string">"object"</span>: <span class="string">"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"</span>,<span class="comment">//用于检查object元素是否是flash</span>
+        <span class="string">"applet"</span>: <span class="literal">true</span>
+    },
+
+    <span class="comment">//判断一个DOM元素或javascript对象是否有关联的数据</span>
+    hasData: <span class="function"><span class="keyword">function</span><span class="params">( elem )</span> {</span>
+        elem = elem.nodeType ? jQuery.cache[ elem[jQuery.expando] ] : elem[ jQuery.expando ];
+        <span class="keyword">return</span> !!elem &amp;&amp; !isEmptyDataObject( elem );
+    },
+
+    <span class="comment">//为DOM元素或javascript对象设置任何类型的数据</span>
+    data: <span class="function"><span class="keyword">function</span><span class="params">( elem, name, data, pvt <span class="comment">/* Internal Use Only */</span> )</span> {</span>
+        <span class="comment">//是否可以附加数据，不可以的话直接返回</span>
+        <span class="keyword">if</span> ( !jQuery.acceptData( elem ) ) {
+            <span class="keyword">return</span>;
+        }
+        <span class="keyword">var</span> thisCache, ret,
+            <span class="comment">//jQuery.expando是一个唯一的字符串，jquery对象产生的时候就生成</span>
+            internalKey = jQuery.expando,
+            getByName = <span class="keyword">typeof</span> name === <span class="string">"string"</span>,
+
+            <span class="comment">// 区分DOM对象和javascript对象，如果是DOM元素，为了避免javascript和DOM元素之间循环引用导致的浏览器（IE6、7）垃圾回收机制不起作用，要把数据存储在全局缓存对象jQuery.cache中；对于Javascript对象，垃圾回收机制自动发生，数据可以之间存储在javascript对象上。</span>
+            isNode = elem.nodeType,
+            ......
+        <span class="comment">//如果关联id不存在，则分配一个。</span>
+        <span class="keyword">if</span> ( !id ) {
+            <span class="keyword">if</span> ( isNode ) {
+                elem[ internalKey ] = id = jQuery.deletedIds.pop() || ++jQuery.uuid;
+            } <span class="keyword">else</span> {
+                id = internalKey;
+            }
+        }
+        <span class="comment">//如果数据缓存对象不存在，就初始化为空对象</span>
+        <span class="keyword">if</span> ( !cache[ id ] ) {
+            cache[ id ] = {};
+            ......
+        }
+        <span class="comment">// 如果参数name是对象或函数，则批量设置数据</span>
+        <span class="keyword">if</span> ( <span class="keyword">typeof</span> name === <span class="string">"object"</span> || <span class="keyword">typeof</span> name === <span class="string">"function"</span> ) {
+            <span class="keyword">if</span> ( pvt ) {
+                cache[ id ] = jQuery.extend( cache[ id ], name );
+            } <span class="keyword">else</span> {
+                cache[ id ].data = jQuery.extend( cache[ id ].data, name );
+            }
+        }
+        thisCache = cache[ id ];
+        <span class="comment">// 如果参数pvt为true，则设置或读取内部数据，内部数据存储在关联的数据存储对象上；</span>
+        <span class="comment">// 如果参数pvt为false，则设置或读取自定义数据，自定义数据存储在关联的数据缓存对象的属性data上。</span>
+        <span class="keyword">if</span> ( !pvt ) {
+            <span class="keyword">if</span> ( !thisCache.data ) {
+                thisCache.data = {};
+            }
+
+            thisCache = thisCache.data;
+        }
+        <span class="comment">//如果参数data不是undefined，则把参数data设置到属性name上。把name统一换成驼峰式。</span>
+        <span class="keyword">if</span> ( data !== <span class="literal">undefined</span> ) {
+            thisCache[ jQuery.camelCase( name ) ] = data;
+        }
+        <span class="comment">// 参数name为字符串，data为null时读取单个数据。两次读取，使用name读取一次，使用驼峰式再读取一次。</span>
+        <span class="keyword">if</span> ( getByName ) {
+
+            <span class="comment">// First Try to find as-is property data</span>
+            ret = thisCache[ name ];
+
+            <span class="comment">// Test for null|undefined property data</span>
+            <span class="keyword">if</span> ( ret == <span class="literal">null</span> ) {
+
+                <span class="comment">// Try to find the camelCased property</span>
+                ret = thisCache[ jQuery.camelCase( name ) ];
+            }
+        } <span class="keyword">else</span> {
+            <span class="comment">//未传入参数name、data、则返回数据缓存对象。</span>
+            ret = thisCache;
+        }
+        <span class="keyword">return</span> ret;
+    },
+    <span class="comment">//用于移除通过jQuery.data()设置的数据</span>
+    removeData: <span class="function"><span class="keyword">function</span><span class="params">( elem, name, pvt <span class="comment">/* Internal Use Only */</span> )</span> {</span>
+        ......
+    },
+    <span class="comment">// 设置或读取内部数据时使用</span>
+    _data: <span class="function"><span class="keyword">function</span><span class="params">( elem, name, data )</span> {</span>
+        <span class="keyword">return</span> jQuery.data( elem, name, data, <span class="literal">true</span> );
+    },
+    <span class="comment">// 判断DOM元素是否可以设置数据，通过检查DOM元素的节点名称在对象jQuery.noData中是否存在</span>
+    acceptData: <span class="function"><span class="keyword">function</span><span class="params">( elem )</span> {</span>
+        <span class="keyword">var</span> noData = elem.nodeName &amp;&amp; jQuery.noData[ elem.nodeName.toLowerCase() ];
+        <span class="keyword">return</span> !noData || noData !== <span class="literal">true</span> &amp;&amp; elem.getAttribute(<span class="string">"classid"</span>) === noData;
+    }
+});
+</code></pre><p>本节内容参考《jQuery技术内幕》第五章数据缓存Data</p>
+</article><nav id="article-pagination"><a href="/2014/10/11/js-event2/" title="Next article: jQuery事件系统二" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>跨域请求如何破&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>跨域请求如何破</h2><div class="meta">Nov 29 2013</div><p>近日，前端在尝试跨域请求API，接受纯粹的JSON数据，绕过后端大婶们，他们总是这个不能做，那个影响性能。但是，请求一开始就报错，跨域总是这么屌，轻易让你搞定，就不是他的范儿。<br>先看一下错误信息：</p>
+<p>Chrome：Uncaught SyntaxError: Unexpected token :</p>
+<p>Firefox：<img src="/img/crossdomain1.png" alt="跨域请求"></p>
+<p>代码：</p>
+<pre><code>$.ajax({
+        async: <span class="literal">true</span>,
+        url: <span class="string">'http://dbapi.xy.l99.com/dovebox/pintimes/mediatype'</span>,
+        dataType: <span class="string">'jsonp'</span>,
+        data:{media_type: <span class="number">0</span>, limit: <span class="number">20</span>},
+        method: <span class="string">"GET"</span>,
+        error: <span class="function"><span class="keyword">function</span> <span class="params">(jqXHR, textStatus, errorThrown)</span>{</span>
+              <span class="comment">//……;</span>
+        },
+        success: <span class="function"><span class="keyword">function</span> <span class="params">(data, textStatus, jqXHR)</span> {</span>
+               <span class="comment">//……;</span>
+        }
+});
+</code></pre><p>从Firefox的错误信息来看，是数据格式的问题，而返回的JSON数据肯定不存在问题。根据stackoverflow上的说法把dataType从“jsonp”替换成“json”，或在url后面加上callback=?等等都不能解决。我想到的种种错误可能都不是，那肯定是后端的问题了。但是，这个理由是不能拿出去跟后端程序员说的，除非告诉他错误在哪，继续调查下。</p>
+<p>我们知道，跨域请求本质上并不是ajax，而是创建了script标签，将请求地址赋给src，因为script标签可以无条件执行，不受限于同源策略。于是，尝试在页面上增加：</p>
+<pre><code><span class="tag">&lt;<span class="title">script</span> <span class="attribute">type</span>=<span class="value">"text/javascript"</span> <span class="attribute">src</span>=<span class="value">"http://dbapi.xy.l99.com/dovebox/pintimes/mediatype"</span> &gt;</span><span class="javascript"></span><span class="tag">&lt;/<span class="title">script</span>&gt;</span>
+</code></pre><p>猜猜结果如何？</p>
+<p>报了同样的错误信息，不难得知，浏览器加载了这个假的“js文件”，但是执行的时候发现这段代码并不符合js语法，所以报了以上错误。</p>
+<p>回到跨域请求的本质上来，后端在返回数据时需要在数据外层包装一个函数，函数名由前端传递，默认是jquery+随机数。包装函数的目的一方面是使其符合js语法，另一方面是将数据以参数形式传递过来，方便获取。除了包装函数，还有其他办法吗？把数据赋给一个变量岂不是更方便？有机会可以再实现一下跨域请求。</p>
+<p>那到底是不是后端未处理的原因？我们用fiddler模拟返回数据看看。</p>
+<pre><code>$.ajax({
+        async: <span class="literal">true</span>,
+        url: <span class="string">'http://dbapi.xy.l99.com/dovebox/pintimes/mediatype'</span>,
+        dataType: <span class="string">'jsonp'</span>,
+        jsonpCallback: <span class="string">"aa"</span>, 
+        data:{media_type: <span class="number">0</span>, limit: <span class="number">20</span>},
+        method: <span class="string">"GET"</span>,
+        error: <span class="function"><span class="keyword">function</span> <span class="params">(jqXHR, textStatus, errorThrown)</span>{</span>
+              <span class="comment">//……;</span>
+        },
+        success: <span class="function"><span class="keyword">function</span> <span class="params">(data, textStatus, jqXHR)</span> {</span>
+               <span class="comment">//……;</span>
+        }
+});
+</code></pre><p>由于在请求中添加callback=?会导致函数名随机生成，不易控制，所以自定义一个：jsonpCallback: “aa”,</p>
+<p>在fiddler中设置规则，当请求某个URL时，返回本地数据（特别增加了函数包装）。</p>
+<pre><code>aa({<span class="string">"status"</span>:<span class="string">"1"</span>,<span class="string">"code"</span>:<span class="string">"200"</span>,<span class="string">"data"</span>:{<span class="attribute">...</span><span class="attribute">...</span>}});
+</code></pre><p><img src="/img/crossdomain1.png" alt="跨域请求"><br>果然，一切搞定。API啊，API，你竟然不支持跨域请求？？？！！！！</p>
+<p>最后，我们还是从jquery源码中走一下跨域请求的流程~~<br>请求入口：</p>
+<pre><code>transport.send( requestHeaders, done );
+<span class="regexp">//</span> requestHeaders <span class="symbol">:<span class="string">"{"</span>Accept<span class="string">":"</span>text</span>, text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, *<span class="regexp">/*; q=0.01"}"</span>
+</code></pre><p>发送请求的本质：</p>
+<pre><code><span class="label">send:</span> function( _, callback ) {
+    script = document<span class="preprocessor">.createElement</span>(<span class="string">"script"</span>)<span class="comment">;</span>
+    script<span class="preprocessor">.async</span> = true<span class="comment">;</span>
+    if ( s<span class="preprocessor">.scriptCharset</span> ) {
+        script<span class="preprocessor">.charset</span> = s<span class="preprocessor">.scriptCharset</span><span class="comment">;</span>
+    }
+    script<span class="preprocessor">.src</span> = s<span class="preprocessor">.url</span><span class="comment">;</span>
+    // Attach handlers for all browsers
+    script<span class="preprocessor">.onload</span> = script<span class="preprocessor">.onreadystatechange</span> = function( _, isAbort ) {                    
+        if ( isAbort || !script<span class="preprocessor">.readyState</span> || /loaded|complete/<span class="preprocessor">.test</span>( script<span class="preprocessor">.readyState</span> ) ) {
+            // Handle memory leak <span class="keyword">in</span> IE
+            script<span class="preprocessor">.onload</span> = script<span class="preprocessor">.onreadystatechange</span> = null<span class="comment">;</span>
+            // Remove the script
+            if ( script<span class="preprocessor">.parentNode</span> ) {
+                script<span class="preprocessor">.parentNode</span><span class="preprocessor">.removeChild</span>( script )<span class="comment">;</span>
+            }
+            alert(script<span class="preprocessor">.innerHTML</span>)<span class="comment">;</span>
+            // Dereference the script
+            script = null<span class="comment">;</span>
+            // Callback if not abort
+            if ( !isAbort ) {
+                callback( <span class="number">200</span>, <span class="string">"success"</span> )<span class="comment">;</span>
+            }
+        }
+    }<span class="comment">;</span>
+    // Circumvent IE6 bugs with base elements (<span class="preprocessor">#2709 and #4378) by prepending</span>
+    // Use native DOM manipulation to avoid our domManip AJAX trickery
+    head<span class="preprocessor">.insertBefore</span>( script, head<span class="preprocessor">.firstChild</span> )<span class="comment">;</span>
+}
+</code></pre><p>执行js代码：</p>
+<pre><code>window[ callbackName ] = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+    responseContainer = <span class="built_in">arguments</span>;
+};
+</code></pre><p>预先注册了window[“aa”] = function(){};当假的js加载后立即执行此函数，将参数保存到变量responseContainer中。然后进入onload回调函数，后续会将responseContainer返回给response对象，以及错误处理等等。</p>
+<p>结论：出现文章开头的错误信息，是由于后端没有做跨域处理（这句话是给看了开头直接看结尾的人的）。</p>
+</article><nav id="article-pagination"><a href="/2013/12/12/js-snowflake/" title="Previous article: 献给2014年的第一场雪" class="prev">&larr; Previous article</a><a href="/2013/11/23/js-marquee/" title="Next article: 无缝滚动能有多麻烦" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

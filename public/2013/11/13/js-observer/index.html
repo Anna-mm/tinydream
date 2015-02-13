@@ -1,0 +1,103 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>走向观察者模式&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>走向观察者模式</h2><div class="meta">Nov 13 2013</div><p>我们的JS开发模式基本以JQuery为主导，遍布众多插件式规模较小的js文件。在迭代开发中会遇到这样一种情况，有两个本来相对独立的文件A.js、B.js，此时二者需要通信或相互调用。<br>最简单的办法是，在B中添加一个方法someFunc()，在A中需要调用的地方调用B.someFunc()就行了。缺点是耦合性太高了，举个简单的情况，如果B的开发人员认为someFunc命名不太好修改了一下，谁知道A还在使用，还要去A中再改一遍。</p>
+<pre><code><span class="keyword">var</span> A = {
+    funcName:<span class="string">"A"</span>,
+    init:<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        …….<span class="keyword">this</span>.someHappenedHandler();……
+    },
+    someHappenedHandler:<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        B.someFunc();
+    },
+}
+<span class="keyword">var</span> B = {
+    funcName:<span class="string">"B"</span>,
+    someFunc:<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        document.write(<span class="string">"调用B的someFunc方法"</span>);
+    },
+    init:<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        ……
+    }
+}
+B.init();
+A.init();
+</code></pre><p>那怎么样才能不把someFunc暴露给A呢？这个方法名是由B决定的,由B提前告知并写入A，直到某种情况发生了，A来调用B写入的方法签名？好，尝试一下：</p>
+<pre><code><span class="keyword">var</span> A = {
+    funcName:<span class="string">"A"</span>,
+    listeners:{}, <span class="comment">//用于接收B的写入</span>
+    init:<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        <span class="keyword">this</span>.someHappenedHandler();
+    },
+    someHappenedHandler:<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        <span class="comment">//B.someFunc();</span>
+        <span class="keyword">this</span>.listeners[<span class="string">"someHappened"</span>]();
+    }           
+}
+<span class="keyword">var</span> B = {
+    funcName:<span class="string">"B"</span>,
+    initListeners:<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        A.listeners.someHappened = <span class="keyword">this</span>.someFunc;
+    },
+    someFunc:<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        document.write(<span class="string">"调用B的someFunc方法"</span>);
+    },
+    init:<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        <span class="keyword">this</span>.initListeners();
+    }
+}
+B.init();
+A.init();
+</code></pre><p>一切OK，此时A、B之间的耦合为共同约定了一个字符串“someHappened”用于标识监听的事件签名，以及A的内部属性listeners被B修改。<br>为了将A的listeners也不暴露出去，可以将上述代码抽象成事件注册、事件处理两个方法。</p>
+<pre><code><span class="keyword">var</span> A = {
+    funcName:<span class="string">"A"</span>,
+    listeners:{},
+    init:<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        <span class="keyword">this</span>.someHappenedHandler();
+    },
+    someHappenedHandler:<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        <span class="comment">//B.someFunc();</span>
+        <span class="comment">//this.listeners["someHappened"]();</span>
+        <span class="keyword">this</span>.fireEvent(<span class="string">"someHappened"</span>);
+    }
+}
+<span class="keyword">var</span> B = {
+    funcName:<span class="string">"B"</span>,
+    initListeners:<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        <span class="comment">//A.listeners.someHappened = this.someFunc;</span>
+        B.listen(A,<span class="string">"someHappened"</span>,<span class="keyword">this</span>.someFunc);
+    },
+    someFunc:<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        document.write(<span class="string">"调用B的someFunc方法"</span>);
+    },
+    init:<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        <span class="keyword">this</span>.initListeners();
+    }
+}
+<span class="built_in">Object</span>.prototype.listen = <span class="function"><span class="keyword">function</span><span class="params">(obj,eventName,handler)</span>{</span>
+    <span class="comment">//允许注册同名事件，方法签名保存到数组中</span>
+    <span class="keyword">var</span> arrayHandler = obj.listeners[eventName];
+    <span class="keyword">if</span>(arrayHandler == <span class="literal">null</span>)
+    {
+        arrayHandler = [];
+        obj.listeners[eventName] = arrayHandler;
+    }
+    arrayHandler.push(handler);
+}
+<span class="built_in">Object</span>.prototype.fireEvent = <span class="function"><span class="keyword">function</span><span class="params">(eventName)</span>{</span>
+    <span class="keyword">var</span> arrayHandler = <span class="keyword">this</span>.listeners[eventName];
+    <span class="keyword">if</span>(arrayHandler == <span class="literal">null</span>){
+        <span class="keyword">return</span>;
+    }
+  <span class="comment">//注册同名事件，顺序执行事件处理程序</span>
+    <span class="keyword">for</span>(<span class="keyword">var</span> i = <span class="number">0</span>; i &lt; arrayHandler.length; i++)
+    {
+        arrayHandler [i]();
+    }
+}
+B.init();
+A.init();
+</code></pre><p>是不是很熟悉？这是常见的浏览器事件处理模式——观察者模式（又名发布订阅模式），类同于</p>
+<pre><code>document.getElementById(<span class="string">"XXX"</span>).addEventListener(
+<span class="string">"click"</span>,<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+……
+},<span class="literal">false</span>);
+</code></pre><p>这种模式的实质是可以对程序中某个对象的状态进行观察，并且在其发生改变时得到通知。</p>
+</article><nav id="article-pagination"><a href="/2013/11/23/js-marquee/" title="Previous article: 无缝滚动能有多麻烦" class="prev">&larr; Previous article</a><a href="/2013/11/07/web-scrollfix/" title="Next article: 一滚两动——固定显示的元素超出可视区域部分如何显示完整" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

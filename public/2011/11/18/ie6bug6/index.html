@@ -1,0 +1,22 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>IE6兼容性专题六——PNG图片的处理&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>IE6兼容性专题六——PNG图片的处理</h2><div class="meta">Nov 18 2011</div><p>最近一直在做IE6的兼容，毕竟14.3%的用户是怎么都无法忽略的。而在IE6下网站的丑恶之源就是PNG图片的蓝色背景。尝试了如下解决方案：</p>
+<h2 id="一、CSS解决">一、CSS解决</h2>
+<p>背景图片可以通过加入如下CSS解决：</p>
+<pre><code><span class="class">.png_filter</span><span class="rules">{
+    <span class="rule"><span class="attribute">background</span>:<span class="value"><span class="function">url(../img/layer.png)</span> <span class="number">0</span> <span class="number">0</span> no-repeat</span></span>;
+    <span class="rule"><span class="attribute">_background</span>:<span class="value">none</span></span>;
+    <span class="rule"><span class="attribute">_filter</span>:<span class="value"> progid:DXImageTransform.Microsoft.<span class="function">AlphaImageLoader(enabled=true, sizingMethod=scale, src=<span class="string">"img/layer.png"</span>)</span></span></span>;
+<span class="rule">}</span></span>
+</code></pre><p>如果是图片的话，仍然需要JS来解决。</p>
+<h2 id="二、JS解决">二、JS解决</h2>
+<p>这个相对简单，引入一个外部的JS：DD_belatedPNG_0.0.8a-min.js<br>在内部JS中加入代码：<code>DD_belatedPNG.fix(&#39;.fixpng&#39;)</code>;<br>JS将会对所有class为fixpng的图片或背景图片进行处理，可惜这也不是完美的方案。</p>
+<p>缺点一：JS是对所有页面加载完成的图片进行处理，如果图片本来设置了width或height需要进行缩放，js处理完成之后就变成了原始大小。以前指定的width或height失效。重新设置大小不起作用。</p>
+<p>针对这个问题，要么就是图片不缩放，显示原始大小（IE6下的登录页飞出效果就是这样做的）。要么就是不进行透明处理（加入unfixpng样式，在JS中过滤掉）。</p>
+<p>缺点二：实际效果仍然可以用丑陋来形容。</p>
+<p><img src="/img/ie6bug61.png" alt="ie6透明图片"></p>
+<p>用户最先看到的是左图，1s-5s后看到的是右图。就好像一个丑女在大家面前化妆，化成一个美女，说：我就是这样变漂亮的。分明是一大忌讳嘛。</p>
+<p>三、PNG图片本身</p>
+<p>带着这些疑问看看同行们是怎么做到的。用IE6打开点点和人人，从开始到加载完成完全没有蓝色背景，看不出任何CSS或JS处理的痕迹，滴水不漏呀。从人人上找一张PNG图片保存到本地，同样保存一张我们的图片，新建一个静态文件在IE6下显示它们。</p>
+<p><img src="/img/ie6bug62.png" alt="ie6透明图片"></p>
+<p>左边是人人网的home_icon.png,完全没有蓝色背景。右侧是我们的timeline_icon_content.png。对点点的图片也做了这样的比较，结果是一样的。它们到底在PNG图片上做了什么处理呢？如果能解决了这个问题，我们就不用加入更多的CSS或JS，让缓慢的IE6雪上加霜了。</p>
+<p>解决：png图片保存为索引模式。</p>
+</article><nav id="article-pagination"><a href="/2011/11/20/ie6bug7/" title="Previous article: IE6兼容性专题七——0ms延迟" class="prev">&larr; Previous article</a><a href="/2011/11/17/ie6bug5/" title="Next article: IE6兼容性专题五——正确使用return false" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

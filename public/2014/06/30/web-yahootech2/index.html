@@ -1,0 +1,203 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>雅虎科技频道纯图片布局的实现（下）&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>雅虎科技频道纯图片布局的实现（下）</h2><div class="meta">Jun 30 2014</div><p><img src="/img/yahooTech1.jpg" alt="雅虎科技"></p>
+<p>上一篇主要从外观上介绍了YahooTech的布局方式，本篇着重代码实现。代码实现经历了两个版本，以下是V1.0的算法：</p>
+<p>1、 每张图片的宽度都设置为百分比，当屏幕resize时不需要额外处理。<br>2、 受启发于媒体查询根据屏幕宽度设置多种区间匹配样式，故设置0~320、320~1024、1024～1600、1600~+∞四个区间。</p>
+<p>0~320：手机设备，每行只显示一个</p>
+<p>320~1024：平板设备，每行显示二个或三个。第一个宽度为30~60%，第二个宽度为20~30%，或是当第一个宽度大于50%时，第二个占满该行。否则第三个占满该行。</p>
+<p>1024~1600：桌面，每行显示三个或四个，类似上面的随机取值。</p>
+<p>1600~+∞：超大宽屏，每行显示width/400张图片，每张图片宽度为350~450的随机值。</p>
+<p>3、根据每张图片的实际宽高和显示宽度百分比计算其显示高度，并在当前行布局完成时取得当前行所有图片的最小显示高度作为当前行的显示高度。</p>
+<pre><code>insertItem : <span class="function"><span class="keyword">function</span><span class="params">(item)</span>
+{</span>
+    <span class="keyword">var</span> divItem = $(item);
+    <span class="keyword">var</span> randomWidth = <span class="number">0</span>;
+    <span class="comment">//手机端每行只显示一个</span>
+    <span class="keyword">if</span>(G_layout_options.clientW &lt;= <span class="number">320</span>){
+        randomWidth = <span class="number">100</span>;
+        <span class="keyword">this</span>.isFullROW = <span class="literal">true</span>;
+        <span class="keyword">this</span>.fullNum = <span class="number">1</span>;
+    }
+    <span class="comment">//pad端每行显示二个或三个</span>
+    <span class="keyword">else</span> <span class="keyword">if</span>(G_layout_options.clientW &lt;= <span class="number">1024</span>){
+        <span class="keyword">if</span>(<span class="keyword">this</span>.itemsWidth.length == <span class="number">0</span>){
+            randomWidth = <span class="built_in">Math</span>.random() * (<span class="number">60</span> - <span class="number">30</span>) + <span class="number">30</span>;
+        }
+        <span class="keyword">else</span> <span class="keyword">if</span>(<span class="keyword">this</span>.itemsWidth.length == <span class="number">1</span>){
+            <span class="keyword">if</span>(<span class="built_in">parseInt</span>(<span class="keyword">this</span>.itemsWidth[<span class="number">0</span>]) &lt; <span class="number">50</span>){
+                randomWidth = <span class="built_in">Math</span>.random() * (<span class="number">30</span> - <span class="number">20</span>) + <span class="number">20</span>;
+            }
+            <span class="keyword">else</span>{
+                randomWidth = <span class="number">100</span> - <span class="keyword">this</span>.itemsWidth[<span class="number">0</span>];
+                <span class="keyword">this</span>.isFullROW = <span class="literal">true</span>;
+                <span class="keyword">this</span>.fullNum = <span class="number">2</span>;
+            }
+        }
+        <span class="keyword">else</span> <span class="keyword">if</span>(<span class="keyword">this</span>.itemsWidth.length == <span class="number">2</span>){
+            randomWidth = <span class="number">100</span> - <span class="keyword">this</span>.itemsWidth[<span class="number">0</span>] - <span class="keyword">this</span>.itemsWidth[<span class="number">1</span>];
+            <span class="keyword">this</span>.isFullROW = <span class="literal">true</span>;
+            <span class="keyword">this</span>.fullNum = <span class="number">3</span>;
+        }
+    }
+    <span class="comment">//desktop显示三个或四个</span>
+    <span class="keyword">else</span> <span class="keyword">if</span>(G_layout_options.clientW &lt;= <span class="number">1600</span>){
+        <span class="keyword">if</span>(<span class="keyword">this</span>.itemsWidth.length == <span class="number">0</span>){
+            randomWidth = <span class="built_in">Math</span>.random() * (<span class="number">40</span> - <span class="number">20</span>) + <span class="number">20</span>;
+        }
+        <span class="keyword">else</span> <span class="keyword">if</span>(<span class="keyword">this</span>.itemsWidth.length == <span class="number">1</span>){
+            <span class="keyword">if</span>(<span class="built_in">parseInt</span>(<span class="keyword">this</span>.itemsWidth[<span class="number">0</span>]) &lt; <span class="number">30</span>){
+                randomWidth = <span class="built_in">Math</span>.random() * (<span class="number">30</span> - <span class="number">20</span>) + <span class="number">20</span>;
+            }
+            <span class="keyword">else</span>{
+                randomWidth = <span class="built_in">Math</span>.random() * (<span class="number">40</span> - <span class="number">30</span>) + <span class="number">30</span>;
+            }
+        }
+        <span class="keyword">else</span> <span class="keyword">if</span>(<span class="keyword">this</span>.itemsWidth.length == <span class="number">2</span>){
+            <span class="keyword">if</span>(<span class="built_in">parseInt</span>(<span class="keyword">this</span>.itemsWidth[<span class="number">0</span>] + <span class="keyword">this</span>.itemsWidth[<span class="number">1</span>]) &lt; <span class="number">60</span>){
+                randomWidth = <span class="built_in">Math</span>.random() * (<span class="number">30</span> - <span class="number">20</span>) + <span class="number">20</span>;
+            }
+            <span class="keyword">else</span>{
+                randomWidth = <span class="number">100</span> - <span class="keyword">this</span>.itemsWidth[<span class="number">0</span>] - <span class="keyword">this</span>.itemsWidth[<span class="number">1</span>];
+                <span class="keyword">this</span>.isFullROW = <span class="literal">true</span>;
+                <span class="keyword">this</span>.fullNum = <span class="number">3</span>;
+            }
+        }
+        <span class="keyword">else</span> <span class="keyword">if</span>(<span class="keyword">this</span>.itemsWidth.length == <span class="number">3</span>){
+            randomWidth = <span class="number">100</span> - <span class="keyword">this</span>.itemsWidth[<span class="number">0</span>] - <span class="keyword">this</span>.itemsWidth[<span class="number">1</span>] - <span class="keyword">this</span>.itemsWidth[<span class="number">2</span>];
+            <span class="keyword">this</span>.isFullROW = <span class="literal">true</span>;
+            <span class="keyword">this</span>.fullNum = <span class="number">4</span>;
+        }
+    }
+    <span class="comment">//超大屏</span>
+    <span class="keyword">else</span>{
+        <span class="keyword">this</span>.fullNum = <span class="built_in">parseInt</span>(G_layout_options.contentW / <span class="number">400</span>);
+        <span class="keyword">if</span>(<span class="keyword">this</span>.itemsWidth.length &lt; <span class="keyword">this</span>.fullNum - <span class="number">1</span>){
+            randomWidth = (<span class="built_in">Math</span>.random() * (<span class="number">450</span> - <span class="number">350</span>) + <span class="number">350</span>) / G_layout_options.contentW * <span class="number">100</span>;
+        }
+        <span class="keyword">else</span>{
+            <span class="keyword">var</span> itemsWidthSumTmp = <span class="number">0</span>;
+            <span class="keyword">for</span>(<span class="keyword">var</span> i = <span class="number">0</span>; i &lt; <span class="keyword">this</span>.itemsWidth.length; i++){
+                itemsWidthSumTmp += <span class="keyword">this</span>.itemsWidth[i];
+            }
+            randomWidth = <span class="number">100</span> - itemsWidthSumTmp;
+            <span class="keyword">this</span>.isFullROW = <span class="literal">true</span>;
+        }
+    }
+    <span class="keyword">this</span>.itemsWidth.push(randomWidth);
+    divItem.css(<span class="string">"width"</span>, randomWidth + <span class="string">"%"</span>);
+    <span class="keyword">var</span> that = <span class="keyword">this</span>;
+    divItem.appendTo(<span class="keyword">this</span>.element);
+    <span class="keyword">this</span>.calcuRowHeight(divItem, randomWidth);
+},
+
+calcuRowHeight: <span class="function"><span class="keyword">function</span><span class="params">(divItem, randomWidth)</span>{</span>
+        <span class="keyword">var</span> renderHeight = <span class="built_in">parseFloat</span>(divItem.find(<span class="string">"img"</span>).attr(<span class="string">"data-height"</span>)) * (randomWidth * (G_layout_options.contentW - <span class="number">20</span>) - <span class="number">1000</span>) / (<span class="built_in">parseFloat</span>(divItem.find(<span class="string">"img"</span>).attr(<span class="string">"data-width"</span>)) * <span class="number">100</span>);
+        <span class="keyword">this</span>.itemsHeight.push(renderHeight);
+        <span class="keyword">if</span>(<span class="keyword">this</span>.isFullROW &amp;&amp; <span class="keyword">this</span>.itemsHeight.length == <span class="keyword">this</span>.fullNum){
+            <span class="comment">//console.log(this.itemsHeight);</span>
+            <span class="keyword">var</span> minHeight = <span class="built_in">Math</span>.min.apply(<span class="built_in">Math</span>,<span class="keyword">this</span>.itemsHeight);
+            <span class="keyword">this</span>.element.css({<span class="string">"height"</span>:minHeight &gt; <span class="number">500</span>? <span class="number">500</span>:minHeight});
+            <span class="comment">//每行显示两个时重新取bigger类型图片</span>
+            <span class="keyword">if</span>(<span class="keyword">this</span>.fullNum == <span class="number">2</span>){
+                <span class="keyword">this</span>.element.find(<span class="string">".content-img"</span>).each(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+                    $(<span class="keyword">this</span>).attr(<span class="string">"src"</span>,$(<span class="keyword">this</span>).attr(<span class="string">"src"</span>).replace(<span class="string">"common"</span>,<span class="string">"bigger"</span>));
+                })
+            }
+
+        }
+    }
+</code></pre><p>显示效果如下图：</p>
+<p><img src="/img/yahooTech3.jpg" alt="立方媒体"></p>
+<p>其实这个算法很low，基本上就是一些随机值凑数，被吐槽都是卡卡西风格，这种不顾图片实际宽高而采用随机宽度的做法太不接地气，效果也不好。于是v2.0采用了新的解决方案：</p>
+<p>1、 遍历待排列的数据块Blocks，取得一个availableRow，可能是新的一行，也可能是未满行，将当前数据块Block试插入此行。<br>2、 所谓试插入，就是计算新数据插入后的当前行宽度是否超出最大宽度，超出也没有关系，顺势按比例压缩计算试插入的行高。attempHeight = MaxWith/Sum(width/height)。此时设置一个高度边界值300，当行高小于300时影响效果，故试插入失败。其余情况皆为成功。<br>3、 试插入失败意味着当前行剩余空间过小，不适合再插入数据，故创建新行，新行变成了当前行。<br>4、 执行DOM插入操作。<br>5、 重新计算行高，并以此设置图片显示宽高，如果当前图片宽度与需要显示的宽度不符，为避免图片拉伸影响效果可重新获取对应尺寸的图片URL。排列完成后显示当前行。</p>
+<p>在此方案中图片宽度使用固定值不再使用百分比，能够更大限度地因图制宜。只是窗口resize时需要重排。最大的亮点是行高的计算的方法：attempHeight = MaxWith/Sum(width/height)，真的是很简单的四则运算提供了一个很大的突破口。</p>
+<pre><code>showBlocks : <span class="function"><span class="keyword">function</span><span class="params">(items)</span>
+{</span>   
+    <span class="keyword">for</span>(<span class="keyword">var</span> i = <span class="number">0</span>; i &lt; items.length; i++)
+    {
+        <span class="keyword">var</span> block = items[i];
+        <span class="keyword">var</span> row = <span class="keyword">this</span>.getAvailableRow();
+        <span class="keyword">var</span> rowIndex = row.getRowIndex();
+        <span class="keyword">if</span>(!row.attemptInsertBlock(block)){
+            row = <span class="keyword">this</span>.createNewRow();
+        };
+        row.insertBlock(block);
+    }
+},
+
+getAvailableRow : <span class="function"><span class="keyword">function</span><span class="params">()</span>
+    {</span>
+        <span class="keyword">var</span> lastRow = <span class="keyword">this</span>.getLastRow();
+        <span class="keyword">if</span>(lastRow == <span class="literal">null</span>)
+            lastRow = <span class="keyword">this</span>.createNewRow();
+        <span class="keyword">else</span>
+        {
+            <span class="keyword">var</span> enough = lastRow.checkFullRow();
+            <span class="keyword">if</span>(enough){
+                lastRow = <span class="keyword">this</span>.createNewRow();
+            }
+        }
+        <span class="keyword">return</span> lastRow;
+    },
+
+attemptInsertBlock : <span class="function"><span class="keyword">function</span><span class="params">(block)</span>
+    {</span>   
+        <span class="comment">//边界测试</span>
+        <span class="keyword">if</span>(<span class="keyword">this</span>.rowWidth + block.width - <span class="number">10</span> &gt; G_layout_options.contentW){
+            <span class="keyword">this</span>.rowWidth = G_layout_options.contentW;
+            <span class="keyword">this</span>.attempHeight = (G_layout_options.contentW - (<span class="keyword">this</span>.blockWidths.length + <span class="number">1</span>) * <span class="number">10</span> ) / (<span class="keyword">this</span>.rowRadio + block.aspectRadio);
+            <span class="keyword">if</span>(<span class="keyword">this</span>.attempHeight &lt; <span class="number">300</span>){
+                <span class="keyword">this</span>.layoutBlock();
+                <span class="keyword">return</span> <span class="literal">false</span>;
+            }
+            <span class="keyword">return</span> <span class="literal">true</span>;
+        }
+        <span class="keyword">return</span> <span class="literal">true</span>;
+    },
+
+insertBlock : <span class="function"><span class="keyword">function</span><span class="params">(block)</span>
+    {</span>
+        <span class="comment">//更新视图</span>
+        <span class="keyword">this</span>.element.append(block.element);
+        <span class="comment">//更新Model</span>
+        <span class="keyword">this</span>.blocks.push(block);
+        <span class="keyword">this</span>.attempHeight = <span class="keyword">this</span>.attempHeight == <span class="number">0</span>? block.height : <span class="keyword">this</span>.attempHeight;
+        <span class="keyword">this</span>.rowWidth += block.width + <span class="number">10</span>;
+        <span class="keyword">this</span>.rowRadio += block.aspectRadio;
+        <span class="keyword">this</span>.blockWidths.push(block.width);
+        <span class="keyword">this</span>.blockHeights.push(block.height);
+        <span class="comment">//边界测试</span>
+        <span class="keyword">if</span>(<span class="keyword">this</span>.rowWidth - <span class="number">10</span> &gt; G_layout_options.contentW){
+            <span class="keyword">this</span>.layoutBlock();
+        }
+    },
+
+layoutBlock : <span class="function"><span class="keyword">function</span><span class="params">()</span>
+{</span>   
+    <span class="keyword">this</span>.rowWidth = G_layout_options.contentW;
+    <span class="keyword">this</span>.attempHeight = (G_layout_options.contentW - <span class="keyword">this</span>.blockWidths.length * <span class="number">10</span> ) / <span class="keyword">this</span>.rowRadio;
+    <span class="comment">//设置行高</span>
+    <span class="keyword">this</span>.element.css({<span class="string">"height"</span>:<span class="keyword">this</span>.attempHeight});
+    <span class="keyword">for</span>(<span class="keyword">var</span> i = <span class="number">0</span>; i &lt; <span class="keyword">this</span>.blocks.length; i++){
+        <span class="comment">//更新Model</span>
+        <span class="keyword">var</span> _block = <span class="keyword">this</span>.blocks[i];
+        _block.setContainer(<span class="keyword">this</span>);
+        _block.height = <span class="keyword">this</span>.attempHeight;
+        _block.width = _block.aspectRadio * <span class="keyword">this</span>.attempHeight;
+        <span class="keyword">if</span>(_block.width &gt; <span class="number">400</span>){
+            _block.fetchImage = <span class="literal">true</span>;
+            _block.src= _block.src.replace(<span class="string">"common"</span>,<span class="string">"bigger"</span>);
+        }
+        <span class="comment">//更新视图</span>
+        _block.element.find(<span class="string">"img"</span>).attr(<span class="string">"width"</span>,_block.width);
+        _block.element.find(<span class="string">"img"</span>).attr(<span class="string">"height"</span>,_block.height);
+        <span class="keyword">if</span>(_block.fetchImage){
+            _block.element.find(<span class="string">"img"</span>).attr(<span class="string">"src"</span>,_block.src);
+        }
+    }
+    <span class="keyword">this</span>.isFullROW = <span class="literal">true</span>;
+    <span class="comment">//显示当前行</span>
+    <span class="keyword">this</span>.show();
+},
+</code></pre><p>效果图如下：</p>
+<p><img src="/img/yahooTech4.jpg" alt="立方媒体"></p>
+<p>有没有觉得顿时高大上了很多，完整效果请移步：<a href="http://www.l99.com/media/sex" title="立方媒体" target="blank">http://www.l99.com/media/sex</a></p>
+</article><nav id="article-pagination"><a href="/2014/07/26/per-rest/" title="Previous article: 休假还是治疗？" class="prev">&larr; Previous article</a><a href="/2014/06/26/per-resign/" title="Next article: 鸡血三年 累觉不爱" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

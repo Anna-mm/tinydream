@@ -1,0 +1,45 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>IE6兼容性专题四——div元素不能覆盖select元素&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>IE6兼容性专题四——div元素不能覆盖select元素</h2><div class="meta">Nov 15 2011</div><p>在IE6下，当div下方有下拉列表框select元素的时候，下拉列表框会划破div显示在div之上，不论z-index设为何值均会出现此问题，可能由于下拉列表控件的弹出式下拉列表的原因导致Z轴高度失控。但是IE6还有一个逻辑，div 无法覆盖select,但是iframe 可以覆盖select，而div可以覆盖iframe。</p>
+<p><strong>所以解决办法就是用Z轴高度更高的Iframe元素，（包裹或）覆盖住下拉列表框控件，使其回到正常的Z轴高度上来！</strong></p>
+<p>举例：发起PK时选择好友的弹出层被select划破</p>
+<p><img src="/img/ie6bug41.png" alt="ie6bug"></p>
+<p>结构代码：</p>
+<pre><code><span class="tag">&lt;<span class="title">!—弹出层--</span>&gt;</span>
+<span class="tag">&lt;<span class="title">div</span> <span class="attribute">style</span>=<span class="value">"width: 525px; "</span> <span class="attribute">id</span>=<span class="value">"friend_pop_wrap"</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">!—弹出层内容省略--</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">!—用于覆盖背后层的select元素--</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">iframe</span> <span class="attribute">class</span>=<span class="value">"fixCrossIframe"</span> <span class="attribute">frameborder</span>=<span class="value">"0"</span>&gt;</span><span class="tag">&lt;/<span class="title">iframe</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+</code></pre><p>在弹出层的直接子元素中加入iframe，并设置样式为：</p>
+<pre><code><span class="class">.fixCrossIframe</span><span class="rules">{
+    <span class="rule"><span class="attribute">position</span>:<span class="value">absolute</span></span>;
+    <span class="rule"><span class="attribute">top</span>:<span class="value">-<span class="number">10</span>px</span></span>;<span class="comment">/*考虑到10px的边框设置起始位置为-10px*/</span>
+    <span class="rule"><span class="attribute">left</span>:<span class="value">-<span class="number">10</span>px</span></span>;
+    <span class="rule"><span class="attribute">width</span>:<span class="value"><span class="number">545</span>px</span></span>;<span class="comment">/*如果父元素显式定义了width和height，并且没有border，可简单写为100%
+    height:565px;
+    z-index:-1;/ *-1保证iframe显示在div下方*/</span>
+    <span class="rule"><span class="attribute">border</span>:<span class="value">none</span></span>; <span class="comment">/*去掉iframe的默认边框,无法去掉ie6下左上3D边框，在html中加入frameborder=0*/</span>
+<span class="rule">}</span></span>
+</code></pre><p>据之前的描述，可使用iframe包裹或覆盖select元素，刚才使用的是覆盖的方法。我们再看网上介绍的包裹的方法</p>
+<pre><code><span class="tag">&lt;<span class="title">iframe</span> <span class="attribute">style</span>=<span class="value">"z-index:1"</span> <span class="attribute">id</span>=<span class="value">”fixIframe”</span>&gt;</span> 
+    PK时间：
+    <span class="tag">&lt;<span class="title">select</span> <span class="attribute">name</span>=<span class="value">"challenge.chaTime"</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">option</span> <span class="attribute">value</span>=<span class="value">"1"</span>&gt;</span>一天<span class="tag">&lt;/<span class="title">option</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">option</span> <span class="attribute">value</span>=<span class="value">"2"</span>&gt;</span>二天<span class="tag">&lt;/<span class="title">option</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">option</span> <span class="attribute">value</span>=<span class="value">"3"</span>&gt;</span>三天<span class="tag">&lt;/<span class="title">option</span>&gt;</span>
+    <span class="tag">&lt;/<span class="title">select</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">iframe</span>&gt;</span>
+</code></pre><p>Iframe中不允许直接写入HTML元素，会被吃掉（通过firebug可以看到iframe中的body中没有任何内容）。所以采用JS动态设置iframe的内容，代码如下:</p>
+<pre><code>window.open(<span class="string">""</span>,<span class="string">"fixIframe"</span>,<span class="string">""</span>)
+fixIframe.document.write(<span class="comment">'PK时间：'+ </span>
+    <span class="comment">'<span class="xmlDocTag">&lt;select name="challenge.chaTime"&gt;</span>'+</span>
+    <span class="comment">'<span class="xmlDocTag">&lt;option value="1"&gt;</span>一天<span class="xmlDocTag">&lt;/option&gt;</span>'+</span>
+    <span class="comment">'<span class="xmlDocTag">&lt;option value="2"&gt;</span>二天<span class="xmlDocTag">&lt;/option&gt;</span>'+</span>
+    <span class="comment">'<span class="xmlDocTag">&lt;option value="3"&gt;</span>三天<span class="xmlDocTag">&lt;/option&gt;</span>'+</span>
+    <span class="comment">'<span class="xmlDocTag">&lt;/select&gt;</span>');</span>
+</code></pre><p>实践证明，这种方案并没有解决问题。</p>
+<p>那么干脆引入带有select的网页。下图是引入淘宝首页，定位到右侧的“淘宝旅行”。</p>
+<p><img src="/img/ie6bug42.png" alt="ie6bug"></p>
+<p>点击选择好友，弹出层仍然覆盖不了select元素。</p>
+<p><img src="/img/ie6bug43.png" alt="ie6bug"></p>
+<p>至此证明此方案无效。确实是个人尝试后的结果，如有问题，欢迎指正。</p>
+</article><nav id="article-pagination"><a href="/2011/11/17/ie6bug5/" title="Previous article: IE6兼容性专题五——正确使用return false" class="prev">&larr; Previous article</a><a href="/2011/11/12/ie6bug3/" title="Next article: IE6兼容性专题三——经典的内容复制bug" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

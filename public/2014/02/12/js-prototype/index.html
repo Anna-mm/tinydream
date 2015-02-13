@@ -1,0 +1,88 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>老调重弹：那些年一遍又一遍领悟过的原型链&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>老调重弹：那些年一遍又一遍领悟过的原型链</h2><div class="meta">Feb 12 2014</div><p>一过年吃了许多肉，见了许多人，又思考了许多人生大事，中了年后综合症的招，唯恐脑子不再灵光，荒废专业。特意把基础知识再梳理一下：</p>
+<h3 id="一、简单原型链：构造函数、原型、实例">一、简单原型链：构造函数、原型、实例</h3>
+<p><img src="/img/prototype1.png" alt="简单原型链"><br>这是Nicholas C. Zakas的《Javascript高级程序设计》P120的截图。有一个前端朋友说，他曾经怎么都不理解原型链直到看到此书此章节才如醍醐灌顶。我想，看一遍就领悟恐怕也是神人了。</p>
+<p>这张图的重点总结如下：</p>
+<ol>
+<li>只要创建了一个新函数，就为该函数创建一个prototype属性</li>
+<li>Prototype属性会自动获得一个constructor属性。</li>
+<li>Constructor属性包含快一个指向prototype所在函数的指针。</li>
+<li>可为原型增加其他属性和方法</li>
+<li>创建新实例，其内部包含一个名为protyo (内部属性)的指针指向其构造函数的原型属性。</li>
+</ol>
+<p>此外，还有两个特别的方法用来确定其内部关系：</p>
+<ol>
+<li>实例person1、person2与Person原型之间的关系<pre><code> <span class="function">alert(Person.prototype.<span class="function">isPrototypeOf(person1)</span>)</span>;<span class="comment">//true</span>
+ <span class="function">alert(Person.prototype.<span class="function">isPrototypeOf(person2)</span>)</span>;<span class="comment">//true来自实例本身</span>
+</code></pre></li>
+<li>我们知道，如果要读取person1的某个属性，搜索首先从实例本身开始，如果没有会继续搜索原型对象。那么如何知道搜索到的属性是来自实例本身还是原型？<pre><code> <span class="function">alert(person1.<span class="function">hasOwnProperty(“name”)</span>)</span> <span class="comment">//true来自实例本身</span>
+</code></pre></li>
+</ol>
+<p><strong>最后，原型对象有一个问题。</strong><br>原型中所有属性是被很多实例共享的，通过在实例上添加一个同名属性可以隐藏原型中的对应属性。但是如果这个属性是引用属性就有麻烦了。举例如下：</p>
+<pre><code><span class="function"><span class="keyword">function</span> <span class="title">Person</span><span class="params">()</span>{</span>   }
+Person.prototype = {
+    constructor:Person,
+    name:<span class="string">"Nicholas"</span>,
+    age:<span class="number">29</span>,
+    friends:[<span class="string">"shelby"</span>,<span class="string">"Court"</span>],
+    sayName:<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>....}
+}
+<span class="keyword">var</span> person1 = <span class="keyword">new</span> Person();
+<span class="keyword">var</span> person2 = <span class="keyword">new</span> Person();
+person1.friends.push(<span class="string">"Van"</span>);
+alert(person1.friends);<span class="comment">//["shelby","Court","Van"]</span>
+alert(person2.friends);<span class="comment">//["shelby","Court","Van"]</span>
+alert(person1.friends===person2.friends); <span class="comment">//true</span>
+</code></pre><p>原因是friends数组存在于Person.prototype中，不是在person1中。如果是简单属性赋值比如person1.age = 30并不影响Person.prototype.age=29。</p>
+<h3 id="二、继承原型链：">二、继承原型链：</h3>
+<p><img src="/img/prototype2.png" alt="简单原型链"><br>提示：所有函数的默认原型都是Object的实例，因此默认原型都会包含一个内部指针__proto指向Object.prototype。继承Object这部分未在图中体现。<br>下面我们研究继承是怎么实现的？</p>
+<pre><code><span class="function"><span class="keyword">function</span> <span class="title">Animal</span><span class="params">()</span>{</span>
+    <span class="keyword">this</span>.species = “动物”
+}
+Animal.prototype = {
+    say: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        alert(“I am a ”+ <span class="keyword">this</span>.species +”,my name <span class="keyword">is</span> XXX”);
+}
+}
+<span class="function"><span class="keyword">function</span> <span class="title">cat</span><span class="params">(name,color)</span>{</span>
+    <span class="keyword">this</span>.name = name;
+    <span class="keyword">this</span>.color = color;
+}
+</code></pre><p>如何使”猫”继承“动物”？继承分两部分，分别是构造函数继承和原型继承。构造函数继承实现了对实例属性的继承，原型实现对原型属性和方法的继承。</p>
+<h4 id="1-_构造函数继承">1. 构造函数继承</h4>
+<pre><code>    <span class="function"><span class="keyword">function</span> <span class="title">cat</span> <span class="params">(name, color)</span>{</span>
+        Animal.call(<span class="keyword">this</span>);
+        <span class="keyword">this</span>.name = name;
+        <span class="keyword">this</span>.color = color;
+    }
+</code></pre><h4 id="2-_原型继承">2. 原型继承</h4>
+<pre><code>    Cat.prototype = <span class="keyword">new</span> Animal();
+    Cat.prototype.<span class="keyword">constructor</span> = Cat;
+    <span class="keyword">var</span> cat1 = <span class="keyword">new</span> Cat(“大毛”，“黄色”);
+    alert（cat1.species）； <span class="comment">//动物</span>
+</code></pre><p>此时，原型继承同时继承了构造函数中不变的属性species。事实上，不变的属性应该写入原型，作为原型属性。</p>
+<h4 id="3-_直接原型继承">3. 直接原型继承</h4>
+<p>为什么要将Animal的实例作为Cat的原型呢？如果将Animal的原型赋值给Cat的原型如何呢？<br>改写Animal对象：</p>
+<pre><code>    function Animal(){}
+    Animal<span class="preprocessor">.prototype</span><span class="preprocessor">.species</span> = “动物”<span class="comment">;</span>
+    Cat<span class="preprocessor">.prototype</span> = Animal<span class="preprocessor">.prototype</span><span class="comment">;</span>
+    Cat<span class="preprocessor">.prototype</span><span class="preprocessor">.constructor</span> = Cat<span class="comment">;</span>
+    var cat1 = new Cat(“大毛”，“黄色”)<span class="comment">;</span>
+    alert（cat1<span class="preprocessor">.species</span>）； //动物
+</code></pre><p>优点：不用执行和建立Animal实例，省内存<br>缺点：cat.prototype和animal.prototype都指向同一对象，对cat.prototype的修改都会反映到animal.prototype上。</p>
+<h4 id="4-_对上个方案的改进——利用空对象作中介">4. 对上个方案的改进——利用空对象作中介</h4>
+<pre><code>    <span class="function"><span class="keyword">function</span> <span class="title">extend</span><span class="params">(subclass, superclass)</span> {</span>
+            <span class="keyword">var</span> F = <span class="function"><span class="keyword">function</span> <span class="params">()</span> {</span>};
+            F.prototype = superclass.prototype;
+            subclass.prototype = <span class="keyword">new</span> F();
+            subclass.prototype.constructor = subclass;
+    }
+</code></pre><h4 id="5-_拷贝继承">5. 拷贝继承</h4>
+<p>引颖同学曾大力推荐的自创类库中使用的是拷贝继承，将父对象的所有属性和方法拷贝进子对象。</p>
+<pre><code>    <span class="function"><span class="keyword">function</span> <span class="title">extend</span> （<span class="title">subclass</span>, <span class="title">superclass</span>）{</span>
+            <span class="keyword">Var</span> p = superclass.prototype;
+            <span class="keyword">Var</span> c = subclass.prototype;
+            <span class="keyword">for</span>(<span class="keyword">var</span> i in p){
+                C[i] = p[i]
+            }
+    }
+</code></pre></article><nav id="article-pagination"><a href="/2014/03/01/h5-specs/" title="Previous article: 移动端浏览器下页面制作规范" class="prev">&larr; Previous article</a><a href="/2014/02/06/h5-pagetransition/" title="Next article: 单页应用中页面转场的实现" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

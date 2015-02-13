@@ -1,0 +1,52 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>IE6兼容性专题五——正确使用return false&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>IE6兼容性专题五——正确使用return false</h2><div class="meta">Nov 17 2011</div><p>在IE6下，进入个人时空的照片列表，点击“删除”，确认后页面没有反应。</p>
+<pre><code>&lt;a class=<span class="string">"photo_list_delete"</span> href=<span class="string">"javascript:void(0);"</span>&gt;删除&lt;/a&gt;
+&lt;form id=<span class="string">"photoform"</span> method=<span class="string">"post"</span> action=<span class="string">"http://www.l99.com/EditPicture_deletePicture.action"</span>&gt;
+    ......
+&lt;/form&gt;
+
+$(<span class="string">".photo_list_delete"</span>).bind(<span class="string">"click"</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span></span>{
+    <span class="keyword">if</span>(confirm(<span class="string">'确认删除?'</span>)){
+        $(<span class="string">"#photoform"</span>).submit();
+        <span class="keyword">return</span> <span class="keyword">false</span>;//解决方案
+    }
+});
+</code></pre><p>分析：执行submit语句后，继续执行href指定的跳转。尽管它并没有指定地址，void是一个操作符，会计算一个表达式，但不会返回值，void(0)就等于0，意思是不进行任何操作。所以IE6停住，不进行跳转，但照片已经删除了。 </p>
+<p>方案一：加入return false，阻止默认的事件行为。<br>方案二：改为href=”#”,但页面也会回到顶部（注：”#”等同于#top,回到顶部，相当于浏览器中输入地址回车后的操作。）或者去掉默认事件，<code>href=&quot;javascript:void(0);&quot;</code>，但需要额外加入样式<code>{cursor:pointer;}</code>，并且页面也会滚到起始位置。这种方案不采用。</p>
+<p>正确使用return false，以下内容总结自<a href="http://fuelyourcoding.com/jquery-events-stop-misusing-return-false/" target="_blank" rel="external">http://fuelyourcoding.com/jquery-events-stop-misusing-return-false/</a></p>
+<p>return false实际上做了三件事情：</p>
+<ol>
+<li><code>event.preventDefault();（或window.event.returnValue=false）</code></li>
+<li><code>sevent.stopPropagation();（或window.event.cancelBubble=true）</code></li>
+<li>停止执行立即返回</li>
+</ol>
+<p>我们本想只阻止默认事件，但是它又额外地阻止了冒泡，并且立即返回了。举例说明这种用法可能出现的问题：</p>
+<pre><code><span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"post"</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">h2</span>&gt;</span><span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">"/path/to/page"</span>&gt;</span>My Page<span class="tag">&lt;/<span class="title">a</span>&gt;</span><span class="tag">&lt;/<span class="title">h2</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"content"</span>&gt;</span>
+        Teaser text...
+    <span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+<span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"post"</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">h2</span>&gt;</span><span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">"/path/to/other_page"</span>&gt;</span>My Other Page<span class="tag">&lt;/<span class="title">a</span>&gt;</span><span class="tag">&lt;/<span class="title">h2</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"content"</span>&gt;</span>
+        Teaser text...
+    <span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+</code></pre><p>要求点击某一篇文章标题的时候，将内容加载到当前的“div.content”中。</p>
+<pre><code>$(<span class="string">"div.post h2 a"</span>).click(<span class="function"><span class="keyword">function</span> <span class="params">()</span> {</span>
+    <span class="keyword">var</span> a = $(<span class="keyword">this</span>),
+        href = a.attr(<span class="string">'href'</span>) ;
+        content  = a.parent().next();
+    content.load(href + <span class="string">" #content"</span>);
+    <span class="keyword">return</span> <span class="literal">false</span>;
+});
+</code></pre><p>至此一切顺利，如果我们继续要求加载内容之后，当前的div.post要增加样式.active,于是写道：</p>
+<pre><code><span class="keyword">var</span> posts = $(<span class="string">"div.post"</span>);
+posts.click(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+    posts.removeClass(<span class="string">"active"</span>);
+    $(<span class="keyword">this</span>).addClass(<span class="string">"active"</span>);
+});
+</code></pre><p>这样就能正常work了么？不！这个click事件将不会被触发，因为a的click事件已经阻止了冒泡。如果加入live事件，情况将会变得更复杂。</p>
+<p>总结：当我们确保在正确的位置上阻止默认事件和冒泡事件时可以使用return false，不要滥用避免出现问题。那最开始讲到的问题，有第三种完美版解决方案就是在IE6下直接阻止默认事件，</p>
+<pre><code>window.<span class="keyword">event</span>.returnValue = <span class="keyword">false</span>;
+</code></pre></article><nav id="article-pagination"><a href="/2011/11/18/ie6bug6/" title="Previous article: IE6兼容性专题六——PNG图片的处理" class="prev">&larr; Previous article</a><a href="/2011/11/15/ie6bug4/" title="Next article: IE6兼容性专题四——div元素不能覆盖select元素" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

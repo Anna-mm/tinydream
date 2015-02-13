@@ -1,0 +1,20 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>IE6兼容性专题二——消失的绝对定位&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>IE6兼容性专题二——消失的绝对定位</h2><div class="meta">Nov 10 2011</div><p>这是【个人设置】里选择精灵的页面，直接上图啦!</p>
+<p>FF下效果：</p>
+<p><img src="/img/ie6bug21.png" alt="ie6bug"></p>
+<p>IE6下效果：</p>
+<p><img src="/img/ie6bug22.png" alt="ie6bug"></p>
+<p>赶快找不同啊~~除了弹出层的位置稍稍偏移之外，最重要的右上角【关闭】按钮不见啦。</p>
+<p>结构代码：</p>
+<pre><code><span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"spirit_popbox"</span> <span class="attribute">style</span>=<span class="value">"width:900px; "</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">div</span> <span class="attribute">style</span>=<span class="value">"width:44px; float:left;"</span>&gt;</span><span class="comment">&lt;!--前一个--&gt;</span><span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">div</span> <span class="attribute">style</span>=<span class="value">"width:810px; float:left;"</span>&gt;</span><span class="comment">&lt;!--精灵列表--&gt;</span><span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">div</span> <span class="attribute">style</span>=<span class="value">"width:44px; float:left;"</span>&gt;</span><span class="comment">&lt;!--后一个--&gt;</span><span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">div</span>&gt;</span><span class="comment">&lt;!--解决方案--&gt;</span><span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">a</span> <span class="attribute">style</span>=<span class="value">"position:absolute; right:5px; top:5px; background:url('#')"</span> <span class="attribute">href</span>=<span class="value">"javascript:void(0)"</span>&gt;</span>
+        <span class="comment">&lt;!--关闭--&gt;</span>
+    <span class="tag">&lt;/<span class="title">a</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+</code></pre><p>行内元素没有设置为块状显示？透明度？z-index？JS处理过？使用文字代替图片？a标签换成div？统统看不见。</p>
+<p>终于找到一个不成道理的道理：相对定位（或绝对定位）里的绝对定位挨着浮动元素的时候，而且浮动元素宽度之和等于父元素，或者比父元素少2px的情况下，都会出现绝对等位的元素消失！这个恰恰少了2px。</p>
+<p><strong>解决办法：在浮动元素后加入空层！</strong></p>
+</article><nav id="article-pagination"><a href="/2011/11/12/ie6bug3/" title="Previous article: IE6兼容性专题三——经典的内容复制bug" class="prev">&larr; Previous article</a><a href="/2011/10/10/ie6bug1/" title="Next article: IE6兼容性专题一——z-index" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

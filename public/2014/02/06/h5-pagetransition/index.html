@@ -1,0 +1,95 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>单页应用中页面转场的实现&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>单页应用中页面转场的实现</h2><div class="meta">Feb 6 2014</div><p>在上上篇文章《webapp立方没体诞生之初》中提到，移动框架只使用了Boostrap，但后来迫于页面转场效果，自定义build了jquery mobile的Animated page Transitions部分功能，60多k的代码也让人唏嘘。于是，剖析源码，尝试简化。</p>
+<p><img src="/img/pageTransition1.png" alt="页面转场"></p>
+<p>在看源码之前思考一下自己如何实现：</p>
+<ol>
+<li>页面切换效果：如何让上一个页面移开，让下个页面进入</li>
+<li>当上个页面的滚动条向下滚动一段距离后，如何平滑地移动到下个页面的顶部。</li>
+<li>浏览器中如何回退？</li>
+</ol>
+<h3 id="一、_页面初始化和事件绑定">一、 页面初始化和事件绑定</h3>
+<p><strong>HTML：</strong></p>
+<pre><code>    <span class="subst">&lt;</span>div <span class="built_in">data</span><span class="attribute">-role</span><span class="subst">=</span><span class="string">"page"</span> id<span class="subst">=</span><span class="string">"page_content"</span> class<span class="subst">=</span><span class="string">""</span><span class="subst">&gt;</span>
+        <span class="attribute">...</span><span class="attribute">...</span>
+        <span class="subst">&lt;</span>a class<span class="subst">=</span><span class="string">"p_notes left"</span> href<span class="subst">=</span><span class="string">"#page_notes"</span> <span class="built_in">data</span><span class="attribute">-transition</span><span class="subst">=</span><span class="string">"slide"</span><span class="subst">&gt;</span><span class="number">8</span>条回应<span class="subst">&lt;</span>/a<span class="subst">&gt;</span>
+        <span class="attribute">...</span><span class="attribute">...</span>
+    <span class="subst">&lt;</span>/div<span class="subst">&gt;</span>
+    <span class="subst">&lt;</span>div <span class="built_in">data</span><span class="attribute">-role</span><span class="subst">=</span><span class="string">"page"</span> id<span class="subst">=</span><span class="string">"page_notes"</span> class<span class="subst">=</span><span class="string">"lst_notescontainer"</span><span class="subst">&gt;</span>
+        <span class="attribute">...</span><span class="attribute">...</span>
+    <span class="subst">&lt;</span>/div<span class="subst">&gt;</span>
+</code></pre><p><strong>Jquery.mobile.custom.js：</strong></p>
+<p><img src="/img/pageTransition2.png" alt="页面转场"></p>
+<p>页面初始化中主要做了以下事情，暂不涉及hash存储：</p>
+<ol>
+<li>记录所有pages对象(含有data-role=”page”的DOM)；</li>
+<li>将第一个page设为当前page；</li>
+<li>让当前page入场。</li>
+</ol>
+<p>代码简化如下：</p>
+<pre><code><span class="keyword">var</span> PageTransition = (<span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+    <span class="keyword">var</span> <span class="variable">$pages</span>; <span class="comment">//记录所有page对象</span>
+    <span class="keyword">var</span> pageArray = []; <span class="comment">//记录所有pageId</span>
+    <span class="keyword">return</span> {
+        init: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+            <span class="variable">$pages</span> = $(<span class="string">"*[data-role='page']"</span>);
+            $(<span class="string">"body"</span>).addClass(<span class="string">"ui-mobile"</span>);
+            <span class="keyword">for</span>(<span class="keyword">var</span> i = <span class="number">0</span>; i &lt; <span class="variable">$pages</span>.length; i++){
+                pageArray.push(<span class="variable">$pages</span>.eq(i).attr(<span class="string">"id"</span>));
+                <span class="comment">//标记首个page为当前活动page</span>
+                <span class="keyword">if</span>(i == <span class="number">0</span>){
+                    <span class="variable">$pages</span>.eq(i).addClass(<span class="string">"ui-page-active"</span>);
+                }
+            }
+        }
+}
+}());
+</code></pre><p>页面初始化完成后，向锚点绑定事件来完成页面转场：<br><img src="/img/pageTransition3.png" alt="页面转场"><br>那这个神秘的changePage方法是如何实现的?</p>
+<h3 id="二、页面转场的外衣">二、页面转场的外衣</h3>
+<p>辗转经历各种call之后进入change方法，别以为这就登堂入室了，还要一层层剥开迷雾~~<br><img src="/img/pageTransition4.png" alt="页面转场"><br>对_cssTransition望文生义，难道是CSS3的transition实现的？那岂不是对上下页add或remove 相应动画的class即可。耶！确实如此，不过还得耐得性子读一读这像老太太裹脚布一样的代码~~~</p>
+<h3 id="三、页面转场的核心代码">三、页面转场的核心代码</h3>
+<p><img src="/img/pageTransition5.png" alt="页面转场"></p>
+<p><strong>CSS:</strong></p>
+<pre><code><span class="at_rule">@<span class="keyword">-webkit-keyframes</span> slideinfromright </span>{
+    <span class="tag">from</span> <span class="rules">{<span class="rule"><span class="attribute">-webkit-transform</span>:<span class="value"> <span class="function">translate3d(<span class="number">100</span>%, <span class="number">0</span>, <span class="number">0</span>)</span></span></span>;<span class="rule">}</span></span>
+    <span class="tag">to</span> <span class="rules">{<span class="rule"><span class="attribute">-webkit-transform</span>:<span class="value"> <span class="function">translate3d(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)</span></span></span>;<span class="rule">}</span></span>
+}
+
+<span class="at_rule">@<span class="keyword">-webkit-keyframes</span> slideouttoleft </span>{
+    <span class="tag">from</span> <span class="rules">{<span class="rule"><span class="attribute">-webkit-transform</span>:<span class="value"> <span class="function">translate3d(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)</span></span></span>;<span class="rule">}</span></span>
+    <span class="tag">to</span> <span class="rules">{<span class="rule"><span class="attribute">-webkit-transform</span>:<span class="value"> <span class="function">translate3d(-<span class="number">100</span>%, <span class="number">0</span>, <span class="number">0</span>)</span></span></span>;<span class="rule">}</span></span>
+}
+<span class="class">.slide</span><span class="class">.out</span>,<span class="class">.slide</span><span class="class">.in</span> <span class="rules">{
+    <span class="rule"><span class="attribute">-webkit-animation-timing-function</span>:<span class="value"> ease-out</span></span>;
+    <span class="rule"><span class="attribute">-webkit-animation-duration</span>:<span class="value"> <span class="number">350</span>ms</span></span>;
+    <span class="rule"><span class="attribute">-moz-animation-timing-function</span>:<span class="value"> ease-out</span></span>;
+    <span class="rule"><span class="attribute">-moz-animation-duration</span>:<span class="value"> <span class="number">350</span>ms</span></span>;
+    <span class="rule"><span class="attribute">animation-timing-function</span>:<span class="value"> ease-out</span></span>;
+    <span class="rule"><span class="attribute">animation-duration</span>:<span class="value"> <span class="number">350</span>ms</span></span>;
+<span class="rule">}</span></span>
+<span class="class">.slide</span><span class="class">.in</span> <span class="rules">{
+    <span class="rule"><span class="attribute">-webkit-transform</span>:<span class="value"> <span class="function">translate3d(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)</span></span></span>;
+    <span class="rule"><span class="attribute">-webkit-animation-name</span>:<span class="value"> slideinfromright</span></span>;
+    <span class="rule"><span class="attribute">-moz-transform</span>:<span class="value"> <span class="function">translateX(<span class="number">0</span>)</span></span></span>;
+    <span class="rule"><span class="attribute">-moz-animation-name</span>:<span class="value"> slideinfromright</span></span>;
+    <span class="rule"><span class="attribute">transform</span>:<span class="value"> <span class="function">translateX(<span class="number">0</span>)</span></span></span>;
+    <span class="rule"><span class="attribute">animation-name</span>:<span class="value"> slideinfromright</span></span>;
+<span class="rule">}</span></span>
+<span class="class">.slide</span><span class="class">.out</span> <span class="rules">{
+    <span class="rule"><span class="attribute">-webkit-transform</span>:<span class="value"> <span class="function">translate3d(-<span class="number">100</span>%, <span class="number">0</span>, <span class="number">0</span>)</span></span></span>;
+    <span class="rule"><span class="attribute">-webkit-animation-name</span>:<span class="value"> slideouttoleft</span></span>;
+    <span class="rule"><span class="attribute">-moz-transform</span>:<span class="value"> <span class="function">translateX(-<span class="number">100</span>%)</span></span></span>;
+    <span class="rule"><span class="attribute">-moz-animation-name</span>:<span class="value"> slideouttoleft</span></span>;
+    <span class="rule"><span class="attribute">transform</span>:<span class="value"> <span class="function">translateX(-<span class="number">100</span>%)</span></span></span>;
+    <span class="rule"><span class="attribute">animation-name</span>:<span class="value"> slideouttoleft</span></span>;
+<span class="rule">}</span></span>
+<span class="class">.ui-page-pre-in</span> <span class="rules">{
+    <span class="rule"><span class="attribute">opacity</span>:<span class="value"> <span class="number">0</span></span></span>;
+<span class="rule">}</span></span>
+<span class="class">.ui-page-active</span> <span class="rules">{
+    <span class="rule"><span class="attribute">display</span>:<span class="value"> block</span></span>;
+    <span class="rule"><span class="attribute">overflow</span>:<span class="value"> visible</span></span>;
+    <span class="rule"><span class="attribute">overflow-x</span>:<span class="value"> hidden</span></span>;
+<span class="rule">}</span></span>
+</code></pre><p>不得不用文字描述一下这个过程，尽管繁琐得要命。<br><img src="/img/pageTransition6.png" alt="页面转场"></p>
+<p>上图为控制台输出，翻译后意思是：<br>1：下页藏到最后面（z-index=-10）<br>2：下页显示又隐藏（display:block &amp;&amp; opacity=0）<br>3：下页不用藏到最后面了，原来在哪就在哪<br>4：下页显示，开始入场<br>5：当前页离场<br>6：动画完成后当前页成为了上页隐藏、并移除动画样式<br>7：动画完成后下页成为了当前页移除动画样式。<br>真是搞不懂1、2、3在墨迹啥。</p>
+<p>自行实现后代码如下：<br><img src="/img/pageTransition7.png" alt="页面转场"><br>文章开头提出了三个问题，至此才说清楚一个。真是想得太远，走得太慢啦。Zepto.js号称是jquery mobile的简化版，有时间再看看它是怎么实现的吧！</p>
+</article><nav id="article-pagination"><a href="/2014/02/12/js-prototype/" title="Previous article: 老调重弹：那些年一遍又一遍领悟过的原型链" class="prev">&larr; Previous article</a><a href="/2014/01/20/read-team/" title="Next article: 团队成长记——《在你身边为你设计》读后感" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>跨浏览器纯CSS实现的三角之美&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>跨浏览器纯CSS实现的三角之美</h2><div class="meta">Nov 26 2011</div><p>小小提示框几乎充斥在网站的每个角落，有时候固定显示用以标明网站的新增功能，有的是鼠标滑过显示提示信息，有的只是单纯的指向某一段内容。这种提示框眼熟到都不想看了。</p>
+<p>百度知道:</p>
+<p><img src="/img/triangle1.png" alt="三角之美"></p>
+<p>提示框在全站中应用很广泛，最简单的莫过于切图实现了。但是缺点也很明显，图片的大小一固定，内容就要受到限制，图片的颜色也会导致重用到其他页面时与当前色调不符。 所以我们要寻求一种跨浏览器的完全不用图片的实现方案。</p>
+<p>提示框大致分成两部分箭头和内容框。内容框很容易，设置背景颜色、边框和圆角半径（IE下不支持，可忽略）即可。最重要的是箭头部分。</p>
+<h2 id="（一）无边框正箭头">（一）无边框正箭头</h2>
+<p>先看下豆瓣的同城活动：</p>
+<p><img src="/img/triangle2.png" alt="三角之美"></p>
+<p>这个灰色的不带边框的小箭头是个图片。那怎么用纯CSS实现这个箭头呢。<br>CSS代码：</p>
+<pre><code>    <span class="class">.triangle</span><span class="rules">{ 
+        <span class="rule"><span class="attribute">position</span>:<span class="value">absolute</span></span>;
+        <span class="rule"><span class="attribute">left</span>:<span class="value"><span class="number">80</span>px</span></span>;
+        <span class="rule"><span class="attribute">top</span>:<span class="value">-<span class="number">40</span>px</span></span>;
+        <span class="rule"><span class="attribute">width</span>:<span class="value"><span class="number">0</span></span></span>;
+        <span class="rule"><span class="attribute">height</span>:<span class="value"><span class="number">0</span></span></span>;
+        <span class="rule"><span class="attribute">border-right</span>:<span class="value"><span class="number">20</span>px solid transparent</span></span>;
+        <span class="rule"><span class="attribute">border-left</span>:<span class="value"> <span class="number">20</span>px solid transparent</span></span>;
+        <span class="rule"><span class="attribute">border-top</span>:<span class="value"><span class="number">20</span>px solid transparent</span></span>;
+        <span class="rule"><span class="attribute">border-bottom</span>:<span class="value"><span class="number">20</span>px solid <span class="hexcolor">#d2d2d2</span></span></span>;
+    <span class="rule">}</span></span>
+</code></pre><p>简写为</p>
+<pre><code><span class="attribute">border-width</span><span class="value">:<span class="number">20</span>px;</span><span class="attribute">border-style</span><span class="value">:solid;</span><span class="attribute">border-color</span><span class="value">: transparent  transparent  <span class="hexcolor">#d2d2d2</span></span>
+</code></pre><p><strong>特别注意：某些IE6下不兼容，一定要将transparent中的solid改成dashed。简写繁写都没问题。主要背景色不是白色就要注意了。如果有背景色的话，transparent设置成背景色。</strong></p>
+<p>效果图如下：</p>
+<p><img src="/img/triangle3.jpg" alt="三角之美"></p>
+<p>不用惊讶，没错，高度和宽度都设为0，只是通过设置border实现的。我们可见想象一个基准点（由于宽度和高度都为0，不能视为盒子，只能视为基准点），上下左右边框均为20px，于是构成了一个正方形，如图上图所示，基准点即为红框的中心。</p>
+<p>最关键的是，除了下边框为灰色外，其他边框均为透明。当把红框按照基准点分成四个三角形时，正好显示的是底部三角形。达到预期效果。同理，当我们想做成其他方向的箭头时，就只将那个方向的border设成颜色即可。</p>
+<p>还有一点要注意，三角常常是对于下面的内容框绝对定位，定位的起始点是红框的左上顶点，所以，top=-40px，left=80px。</p>
+<h2 id="（二）无边框斜箭头">（二）无边框斜箭头</h2>
+<p>有时候，我们嫌这种与内容框完全对称的箭头太中规中矩，那怎么做到斜向一边的呢。如图所示。（忽略掉所有红色的线可以看到不规则箭头）</p>
+<p><img src="/img/triangle4.jpg" alt="三角之美"></p>
+<p>在之前的代码基础上把右边框由20px改为10px，可以看到正箭头右偏的部分已经有了缺失，底边框填充的部分也缩小到了30px。如果将右边框继续缩小，缩小到0，我们可以想象，变成了直角三角形，直角边在右底部，也就是方框的1/8。</p>
+<h2 id="（三）有边框箭头">（三）有边框箭头</h2>
+<p>其实，这种纯色无边框的提示还是不够明显，常常不能满足我们需求，就像第一张百度的图片那样，浅黄色的背景外加灰色的边框，那能不能做到呢？你可能说，箭头已经是边框来模拟的了，怎么可能再加一层border呢。</p>
+<p>点点：</p>
+<p><img src="/img/triangle5.png" alt="三角之美"></p>
+<p>仔细看那个箭头，确实没有边框。由于白色和灰色的色差比较小，用户不容易发现，如果是百度的那张图，箭头没有边框那可就很丑了。（可见，使用安全色还是很重要的。可是我们的网站颜色都很不安全，很有视觉冲击力和不规则性，边边角角的要求就更高了。）</p>
+<p>其实，这个也很好解决。既然能做一个箭头，就可以做两个。。。怎么样，想到了吧。把两个三角形偏移1px的重叠。OK，如图：</p>
+<p><img src="/img/triangle6.png" alt="三角之美"></p>
+<p>结构代码：</p>
+<pre><code>&lt;<span class="keyword">div</span> <span class="type">class</span>=<span class="string">"content"</span> style=<span class="string">"border:1px solid #666"</span>&gt;
+    &lt;<span class="keyword">div</span> <span class="type">class</span>=<span class="string">"triangle"</span>&gt;&lt;/<span class="keyword">div</span>&gt;
+    &lt;<span class="keyword">div</span> <span class="type">class</span>=<span class="string">"triangle-copy"</span>&gt;&lt;/<span class="keyword">div</span>&gt;
+&lt;/<span class="keyword">div</span>&gt;
+</code></pre><p>CSS代码：</p>
+<pre><code><span class="class">.triangle</span><span class="rules">{
+    <span class="rule"><span class="attribute">position</span>:<span class="value">absolute</span></span>;
+    <span class="rule"><span class="attribute">left</span>:<span class="value"><span class="number">80</span>px</span></span>;
+    <span class="rule"><span class="attribute">top</span>:<span class="value">-<span class="number">40</span>px</span></span>;
+    <span class="rule"><span class="attribute">width</span>:<span class="value"><span class="number">0</span></span></span>;
+    <span class="rule"><span class="attribute">height</span>:<span class="value"><span class="number">0</span></span></span>;
+    <span class="rule"><span class="attribute">border-right</span>:<span class="value"><span class="number">0</span>px solid transparent</span></span>;
+    <span class="rule"><span class="attribute">border-left</span>:<span class="value"> <span class="number">20</span>px solid transparent</span></span>;
+    <span class="rule"><span class="attribute">border-top</span>:<span class="value"><span class="number">20</span>px solid transparent</span></span>;
+    <span class="rule"><span class="attribute">border-bottom</span>:<span class="value"><span class="number">20</span>px solid <span class="hexcolor">#666</span></span></span>;
+<span class="rule">}</span></span>
+
+<span class="class">.triangle-copy</span><span class="rules">{
+    <span class="rule"><span class="attribute">position</span>:<span class="value">absolute</span></span>;
+    <span class="rule"><span class="attribute">left</span>:<span class="value"><span class="number">79</span>px</span></span>;
+    <span class="rule"><span class="attribute">top</span>:<span class="value">-<span class="number">38</span>px</span></span>;
+    <span class="rule"><span class="attribute">width</span>:<span class="value"><span class="number">0</span></span></span>;
+    <span class="rule"><span class="attribute">height</span>:<span class="value"><span class="number">0</span></span></span>;
+    <span class="rule"><span class="attribute">border-right</span>:<span class="value"><span class="number">0</span>px solid transparent</span></span>;
+    <span class="rule"><span class="attribute">border-left</span>:<span class="value"> <span class="number">20</span>px solid transparent</span></span>;
+    <span class="rule"><span class="attribute">border-top</span>:<span class="value"><span class="number">20</span>px solid transparent</span></span>;
+    <span class="rule"><span class="attribute">border-bottom</span>:<span class="value"><span class="number">20</span>px solid <span class="hexcolor">#d2d2d2</span></span></span>;
+<span class="rule">}</span></span>
+</code></pre><p>注意看，两个三角形是兄弟关系，不是父子关系（父子结构的样式由于基准点的复杂性很难找出规律）。三角哥哥的20px深灰色边框被三角弟弟20px的浅灰边框覆盖，弟弟的绝对定位相对哥哥下移2px，左移1px。（如果都是1px，无法露出三角哥哥的边框）。</p>
+<p>结语：看了国内几家当下很流行的网站，箭头几乎都是用图片做的。只有点点用了CSS样式实现，但也有缺憾。最后的解决方案从JQuery UI Widgets——wijmo中借鉴到的。看来，必须得多看看国外的网站和相关信息了。</p>
+</article><nav id="article-pagination"><a href="/2011/12/12/web-safaricode/" title="Previous article: 从safari下的缺字符说起" class="prev">&larr; Previous article</a><a href="/2011/11/20/ie6bug7/" title="Next article: IE6兼容性专题七——0ms延迟" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

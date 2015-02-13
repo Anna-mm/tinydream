@@ -1,0 +1,57 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>无缝滚动能有多麻烦&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>无缝滚动能有多麻烦</h2><div class="meta">Nov 23 2013</div><p>实现无缝滚动是前端的必备技能，每次实现也都是小打小闹，这次是在N1、N2、N3的条件下实现，下次在N2、N3、N4的条件下实现，套路大同小异。近期做了个内容动态加载、图文混排的无缝滚动，比以前多了些看点，遂由浅入深，一一道来。</p>
+<h3 id="一、marquee标记">一、marquee标记</h3>
+<pre><code><span class="tag">&lt;<span class="title">marqueen</span>&gt;</span>标记可以实现文字滚动，但是不能实现无缝滚动。
+<span class="tag">&lt;<span class="title">marquee</span> <span class="attribute">direction</span>=<span class="value">left</span> <span class="attribute">scrollamount</span>=<span class="value">2</span> <span class="attribute">onmouseover</span>=<span class="value">"this.stop();"</span> 
+<span class="attribute">onmouseout</span>=<span class="value">"this.start();"</span> <span class="attribute">width</span>=<span class="value">100</span> <span class="attribute">height</span>=<span class="value">100</span>&gt;</span>
+    中文为什么就不行
+<span class="tag">&lt;/<span class="title">marquee</span>&gt;</span>
+</code></pre><p>Direction设置活动字幕的滚动方向，scrollamount设置文字的滚动速度。<br>onMouseOut=”this.start()” ：用来设置鼠标移出该区域时继续滚动<br>onMouseOver=”this.stop()”：用来设置鼠标移入该区域时停止滚动<br>behavior设置滚动方式，align设置对齐方式等，属性很多，但是致命伤是不能实现无缝滚动。</p>
+<h3 id="二、JS障眼法">二、JS障眼法</h3>
+<p>仍然以横向滚动为例，通常情况下，显示范围的宽度肯定小于内容的宽度，才有滚动显示的必要。红色框为内容显示框。为了使滚动文字的首尾相接，要使用两个放有相同内容的div。<br><img src="/img/marquee1.png" alt="跨域请求"></p>
+<p>红色框固定不动，每次当第二个div内容滚动到末尾时，要模拟成第一个div滚动到末尾的情况，这样，第二个div就可以无缝跟上。<br><img src="/img/marquee2.png" alt="跨域请求"></p>
+<p>模拟成：</p>
+<p><img src="/img/marquee3.png" alt="跨域请求"></p>
+<p>结构代码：</p>
+<pre><code>&lt;<span class="keyword">div</span> <span class="property">id</span>=<span class="string">"dvvv"</span> style=<span class="string">"overflow:hidden;height:27px;width:100px;
+                      border:1px solid red;white-space:nowrap"</span>&gt;
+        &lt;<span class="keyword">div</span> <span class="property">id</span>=<span class="string">"dvvv1"</span> style=<span class="string">"display:inline"</span>&gt;实现文字无缝滚动。&lt;/<span class="keyword">div</span>&gt;
+        &lt;<span class="keyword">div</span> <span class="property">id</span>=<span class="string">"dvvv2"</span> style=<span class="string">"display:inline"</span>&gt;&lt;/<span class="keyword">div</span>&gt;
+&lt;/<span class="keyword">div</span>&gt;
+</code></pre><p>JS代码：</p>
+<pre><code><span class="keyword">var</span> interval=<span class="number">30</span>;
+<span class="keyword">var</span> <span class="variable">$dvvv</span> = document.getElementById(<span class="string">"dvvv"</span>);
+<span class="keyword">var</span> <span class="variable">$dvvv1</span> = document.getElementById(<span class="string">"dvvv1"</span>);
+<span class="keyword">var</span> <span class="variable">$dvvv2</span> = document.getElementById(<span class="string">"dvvv2"</span>);   
+<span class="comment">//内容复制</span>
+<span class="variable">$dvvv2</span>.innerHTML = <span class="variable">$dvvv1</span>.innerHTM;
+<span class="function"><span class="keyword">function</span> <span class="title">Marqpuee</span><span class="params">()</span>{</span>
+    <span class="comment">//此时滚动到第二个div的末尾处，100为显示宽度</span>
+    <span class="keyword">if</span>(<span class="variable">$dvvv</span>.scrollLeft &gt;= <span class="number">2</span> * <span class="variable">$dvvv1</span>.offsetWidth - <span class="number">100</span> ){ 
+<span class="comment">//障眼法来啦！！模拟成第一个div滚到到末尾处。瞬间发生，人眼不太能感受到这种变化</span>
+<span class="variable">$dvvv</span>.scrollLeft = <span class="variable">$dvvv1</span>.offsetWidth - <span class="number">100</span>;
+    }
+     <span class="keyword">else</span>{  
+        <span class="variable">$dvvv</span>.scrollLeft++;
+     }
+}
+<span class="keyword">var</span> MyMar = setInterval(Marqpuee,  interval);
+</code></pre><h3 id="三、实战">三、实战</h3>
+<p>前面都是热身，这时来了一个实时新闻页面，要求向下滚动播放，并不时从后台推送新的战况，如下：<br><img src="/img/marquee4.png" alt="跨域请求"></p>
+<h4 id="1、稍微复杂的图文混排新闻块如何进行DOM拷贝实现障眼法？">1、稍微复杂的图文混排新闻块如何进行DOM拷贝实现障眼法？</h4>
+<p>假设，页面中固定显示区域为10个block，那初始加载可能为20个block，那如果将20个block都进行DOM拷贝，无疑给页面增大了负荷。那么，我们可以只拷贝前10个block，等待20个block都滚动一遍之后，并没有新的数据载入时，继续滚动这10个拷贝，留出时间让前20个block复位。<br><img src="/img/marquee5.png" alt="跨域请求"><br>初始化<br><img src="/img/marquee6.png" alt="跨域请求"><br>滚动到拷贝数据，复位</p>
+<h4 id="2、如何在不刷新页面的情况下，显示后台推送的新闻？（前端可以设置定时器，定时请求新数据）">2、如何在不刷新页面的情况下，显示后台推送的新闻？（前端可以设置定时器，定时请求新数据）</h4>
+<p>考虑一下，新数据应该插在什么位置？显然，拷贝数据是每一轮滚动结束后才显示，以供原始数据复位，那么新数据应该插在拷贝数据之前。又有新问题了，如果刚好滚动到拷贝数据，那用户肯定能看到新数据的插入，页面就不平滑了。所以插入要寻找时机，插入点一定处于可视区域之外：</p>
+<pre><code><span class="comment">// scrollNum:底部滚出数</span>
+<span class="comment">// sum:总数量，包括拷贝数</span>
+<span class="comment">// visibleNum = bakNum:可视数=拷贝数</span>
+<span class="keyword">if</span>(scrollNum &lt; <span class="built_in">sum</span> - visibleNum * <span class="number">2</span>){
+    <span class="comment">//append html</span>
+}
+<span class="keyword">else</span>{
+    setTimeout(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+            <span class="comment">//append html;s</span>
+    },<span class="transposed_variable">marqueeTimer.</span>interval * visibleNum)
+}
+</code></pre><p>当插入点处于可视区域时，等待拷贝数据滚动完成之后再插入。但要考虑拷贝数据滚动完成所需时间内，没有新的数据推送到前端。否则，需要增加缓冲池缓存数据。</p>
+<h4 id="3、每次插入数据后，还要及时修正容器的scrollTop或margin-top，保证不跳动。">3、每次插入数据后，还要及时修正容器的scrollTop或margin-top，保证不跳动。</h4>
+</article><nav id="article-pagination"><a href="/2013/11/29/js-crossdomain/" title="Previous article: 跨域请求如何破" class="prev">&larr; Previous article</a><a href="/2013/11/13/js-observer/" title="Next article: 走向观察者模式" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

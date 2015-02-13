@@ -1,0 +1,135 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>jQuery事件系统一&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>jQuery事件系统一</h2><div class="meta">Oct 10 2014</div><p>说到Javascript事件，脑海中闪现的是最初做简单网页时写个button，注册个onclick事件，就出现了简单的交互。那么onclick，和后续接触到的原生JS中的DOM0、DOM2、addEventListener、attachEvent、jQuery中的bind、live、delegate、on等是什么关系，如何演化的。一个简单的onclick为什么会发展成复杂的jQuery事件系统以及数据缓存系统。今天只是一个引子：</p>
+<h2 id="DOM0级事件系统">DOM0级事件系统</h2>
+<pre><code>document.getElementById(<span class="string">"btn"</span>).onclick = <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+    alert(<span class="built_in">arguments</span>.length);
+}
+</code></pre><p>这是是最简单的绑定事件的方式。再早之前就是元素标签内绑定事件，不推荐这种样式行为混在一起的写法。</p>
+<p>优势：<br>简单稳定，浏览器兼容；处理事件时，this关键字处理的是当前元素，这很有帮助。<br>劣势：<br>1、只允许元素每次绑定一个回调，重复绑定会覆盖之前的绑定。<br>2、在IE下回调没有参数，在其他浏览器下回调的第一个参数是事件对象。上述代码在IE下弹出0，而在Firefox下弹出1，这个参数就是event对象。<br>3、只能在事件冒泡中运行，而非捕获或冒泡。</p>
+<h2 id="DOM2级事件系统">DOM2级事件系统</h2>
+<p>IE：</p>
+<pre><code>element.attachEvent(<span class="string">"on"</span> + <span class="class"><span class="keyword">type</span>, <span class="title">callback</span>); //绑定事件</span>
+element.detachEvent(<span class="string">"on"</span> + <span class="class"><span class="keyword">type</span>, <span class="title">callback</span>); //解除绑定</span>
+document.createEventObject(); <span class="comment">//创建事件</span>
+element.fireEvent(<span class="class"><span class="keyword">type</span>, <span class="title">event</span>); //派发事件</span>
+</code></pre><p>优势：<br>可绑定多个事件，不会覆盖<br>劣势：<br>1、回调函数中this不是指向被绑定元素，而是window<br>2、同种事件绑定多个回调时，回调并不是按照绑定时的顺序依次触发（这还真是头一次听说）<br>3、event事件对象仅存在于window.event参数中，其属性与W3C的有很大差异，比如currentTarget<br>4、事件必须以onXXX形式，仅IE可用<br>5、只支持冒泡</p>
+<p>W3C：</p>
+<pre><code><span class="keyword">element</span>.addEventListener(type, callback, [phase]);<span class="comment"> //绑定事件</span>
+<span class="keyword">element</span>.removeEventListener(type, callback, [phase]);<span class="comment"> //解除绑定</span>
+<span class="keyword">element</span>.createEvent(types);<span class="comment"> //创建事件</span>
+event.initEvent();<span class="comment"> //初始化事件</span>
+<span class="keyword">element</span>.dispatchEvent(event);<span class="comment"> //派发事件</span>
+</code></pre><p>优势：<br>1、同时支持事件处理的捕获和冒泡阶段，事件阶段取决于参数设置<br>2、事件处理函数内部，this引用当前元素<br>3、事件对象总是可以通过处理函数的第一个参数获取<br>4、可以绑定多个事件</p>
+<p>劣势：其他标准浏览器的实现也有不一致的地方，比如firefox不支持focusin、focus事件，第三四五个参数的使用，事件成员对象的不稳定，如safari下event.target可能时返回文本节点。</p>
+<p>为了兼容浏览器，我们通常会创建一个统一的方法，在方法内部通过特性检测分别调用不用的事件模型。</p>
+<pre><code><span class="comment">//绑定事件</span>
+<span class="keyword">function</span> addEvent(el, <span class="class"><span class="keyword">type</span>, <span class="title">callback</span>, <span class="title">useCapture</span>){</span>
+    <span class="keyword">if</span>(el.addEventListener){<span class="comment">//W3C方式优先</span>
+        el.addEventListener(<span class="class"><span class="keyword">type</span>, <span class="title">callback</span>, !!<span class="title">useCapture</span>);</span>
+    }
+    <span class="keyword">else</span>{
+        el.attachEvent(<span class="string">"on"</span> + <span class="class"><span class="keyword">type</span>, <span class="title">callback</span>);</span>
+    }
+}
+<span class="comment">//移除事件</span>
+<span class="keyword">function</span> removeEvent(el, <span class="class"><span class="keyword">type</span>, <span class="title">callback</span>, <span class="title">useCapture</span>){</span>
+    <span class="keyword">if</span>(el.removeEventListener){<span class="comment">//W3C方式优先</span>
+        el.removeEventListener(<span class="class"><span class="keyword">type</span>, <span class="title">callback</span>, !!<span class="title">useCapture</span>);</span>
+    }
+    <span class="keyword">else</span>{
+        el.detachEvent(<span class="string">"on"</span> + <span class="class"><span class="keyword">type</span>, <span class="title">callback</span>);</span>
+    }
+}
+<span class="comment">//派发事件</span>
+<span class="keyword">function</span> fireEvent(el, <span class="class"><span class="keyword">type</span>){</span>
+    <span class="keyword">if</span>(el.createEvent){
+        event = document.createEvent(<span class="string">"HTMLEvents"</span>);
+        event.initEvent(<span class="class"><span class="keyword">type</span>, <span class="title">true</span>, <span class="title">true</span>);</span>
+        el.dispatchEvent(event);
+    }
+    <span class="keyword">else</span>{
+        event = document.createEventObject();
+        el.fireEvent(<span class="string">"on"</span> + <span class="class"><span class="keyword">type</span>, <span class="title">event</span>);</span>
+    }
+}
+<span class="comment">//延伸</span>
+<span class="comment">//阻止冒泡的通用函数</span>
+<span class="keyword">function</span> stopBubble(e){
+    <span class="keyword">if</span>(e &amp;&amp; e.stopPropagation){ <span class="comment">//W3C方式</span>
+        e.stopPropagation();
+    }
+    <span class="keyword">else</span>{
+        window.event.cancelBubble = <span class="keyword">true</span>; <span class="comment">//IE</span>
+    }
+}
+<span class="comment">//阻止浏览器默认行为的通用函数</span>
+<span class="keyword">function</span> stopDefault(){
+    <span class="keyword">if</span>(e &amp;&amp; e.preventDefault){ <span class="comment">//W3C方式</span>
+        e.preventDefault();
+    }
+    ele{
+        window.event.returnValue = <span class="keyword">false</span>; <span class="comment">//IE</span>
+    }
+}
+</code></pre><p>fireEvent与调用onClick的区别：<br>派发事件fireEvent模拟用户行为触发事件，如触发一个button的onclick事件，如果该button未注册onclick事件也不会报错，并且会引发冒泡，触发其父类中的onclick事件，更贴近用户真实的触发行为。那如果直接调用onclick()呢？如果在未注册onclick事件时调用onclick将会报错“对象不支持此属性或方法”。</p>
+<h2 id="Dean_Edward_&amp;&amp;_event-js">Dean Edward &amp;&amp; event.js</h2>
+<p>鉴于DOM2级事件系统的缺陷，Dean Edward提出了更完美的解决方案，成为jQuery事件系统的源头，看它是不是长了三头六臂，代码来自<a href="http://dean.edwards.name/weblog/2005/10/add-event/" target="_blank" rel="external">http://dean.edwards.name/weblog/2005/10/add-event/</a></p>
+<pre><code><span class="function"><span class="keyword">function</span> <span class="title">addEvent</span><span class="params">(element, type, handler)</span> {</span>
+    <span class="comment">// 为每一个事件处理函数分派一个唯一的ID，方便移除</span>
+    <span class="keyword">if</span> (!handler.$$guid) handler.$$guid = addEvent.guid++;
+    <span class="comment">// 为元素的事件类型创建一个空对象，保存所有类型的回调</span>
+    <span class="keyword">if</span> (!element.events) element.events = {};
+    <span class="comment">// events对象包含多个type/handlers这样的键值对</span>
+    <span class="keyword">var</span> handlers = element.events[type];
+    <span class="keyword">if</span> (!handlers) {
+        handlers = element.events[type] = {};
+        <span class="comment">// 如果元素之前以onXXX的形式绑定过事件，则存储起来</span>
+        <span class="keyword">if</span> (element[<span class="string">"on"</span> + type]) {
+            handlers[<span class="number">0</span>] = element[<span class="string">"on"</span> + type];
+        }
+    }
+    <span class="comment">// 保存当前的事件处理函数</span>
+    handlers[handler.$$guid] = handler;
+    <span class="comment">// 指定一个全局的事件处理函数来做所有的工作</span>
+    element[<span class="string">"on"</span> + type] = handleEvent;
+};
+<span class="comment">// 事件处理函数ID计数器</span>
+addEvent.guid = <span class="number">1</span>;
+
+<span class="function"><span class="keyword">function</span> <span class="title">removeEvent</span><span class="params">(element, type, handler)</span> {</span>
+    <span class="comment">// 从events对象移除当前事件处理函数/函数类型</span>
+    <span class="keyword">if</span> (element.events &amp;&amp; element.events[type]) {
+        <span class="keyword">delete</span> element.events[type][handler.$$guid];
+    }
+};
+
+<span class="comment">//统一的事件处理函数入口</span>
+<span class="function"><span class="keyword">function</span> <span class="title">handleEvent</span><span class="params">(event)</span> {</span>
+    <span class="keyword">var</span> returnValue = <span class="literal">true</span>;
+    <span class="comment">// 获取原生的事件对象</span>
+    event = event || fixEvent(window.event);
+    <span class="comment">// 从元素的事件对象上获取事件处理函数</span>
+    <span class="keyword">var</span> handlers = <span class="keyword">this</span>.events[event.type];
+    <span class="comment">// 遍历执行事件处理函数</span>
+    <span class="keyword">for</span> (<span class="keyword">var</span> i <span class="keyword">in</span> handlers) {
+        <span class="keyword">this</span>.$$handleEvent = handlers[i];
+        <span class="keyword">if</span>(<span class="keyword">this</span>.$$handleEvent(event)===<span class="literal">false</span>){
+            returnValue = <span class="literal">false</span>;
+        };
+    }
+};
+<span class="comment">//为IE的事件对象做简单的修复</span>
+<span class="function"><span class="keyword">function</span> <span class="title">fixEvent</span><span class="params">(event)</span> {</span>
+    <span class="comment">//添加标准的W3C方法</span>
+    event.preventDefault = fixEvent.preventDefault;
+    event.stopPropagation = fixEvent.stopPropagation;
+    <span class="keyword">return</span> event;
+};
+fixEvent.preventDefault = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+    <span class="keyword">this</span>.returnValue = <span class="literal">false</span>;
+};
+fixEvent.stopPropagation = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+    <span class="keyword">this</span>.cancelBubble = <span class="literal">true</span>;
+};
+</code></pre><p>特点：<br>1、没有对象检测，因为使用最通用的原始的onXXX绑定，不使用addEventListener/attachEvent<br>2、保持正确的this指向<br>3、传递了正确的event对象<br>4、完全跨浏览器包括IE4或NS4<br>5、不会引发内存泄漏（使用者发现onXXX在IE存在不可消弭的内存泄漏）</p>
+<p>jQuery在这个版本基础上吸收了“每个处理函数分配一个unique ID，所有回调放到一个对象上存储”的建议，出现了jQuery的数据缓存系统，同时舍弃了onXXX方式，仍然使用addEventListener/attachEvent绑定事件。</p>
+</article><nav id="article-pagination"><a href="/2014/10/11/js-event2/" title="Previous article: jQuery事件系统二" class="prev">&larr; Previous article</a><a href="/2014/09/03/per-gototop/" title="Next article: &lt;回到顶部&gt;功能该谁做" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

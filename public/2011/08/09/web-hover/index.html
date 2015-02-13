@@ -1,0 +1,72 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>悬停事件的常用方案&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>悬停事件的常用方案</h2><div class="meta">Aug 9 2011</div><p>经常遇到悬停事件的问题，比如弹出层不断隐藏显示，IE下的闪动等，很头疼。这与div结构和事件机制都有很大关系。故浅显地总结一下解决方案，供大家参考。</p>
+<h2 id="举例一：包含结构（父子结构）">举例一：包含结构（父子结构）</h2>
+<p>鼠标移动到右侧头像处，显示弹出菜单。</p>
+<p><img src="/img/hover1.png" alt="悬停事件"></p>
+<p>结构代码：</p>
+<pre><code><span class="tag">&lt;<span class="title">div</span> <span class="attribute">id</span>=<span class="value">"head_setting_item"</span> &gt;</span>
+<span class="tag">&lt;<span class="title">!—头像--</span>&gt;</span>
+<span class="tag">&lt;<span class="title">a</span> <span class="attribute">id</span>=<span class="value">"nav_avatar"</span> <span class="attribute">href</span>=<span class="value">"#"</span>&gt;</span><span class="tag">&lt;<span class="title">img</span> <span class="attribute">src</span>=<span class="value">"#"</span>/&gt;</span> <span class="tag">&lt;/<span class="title">a</span>&gt;</span>
+<span class="tag">&lt;<span class="title">!—弹出层--</span>&gt;</span>
+<span class="tag">&lt;<span class="title">span</span> <span class="attribute">id</span>=<span class="value">"head_setting_menu"</span> <span class="attribute">style</span>=<span class="value">"display: none;"</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">"#"</span>&gt;</span>◀ 我的飞鸽<span class="tag">&lt;/<span class="title">a</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">"#"</span>&gt;</span>上传头像<span class="tag">&lt;/<span class="title">a</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">"#"</span>&gt;</span>个人设置<span class="tag">&lt;/<span class="title">a</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">"#"</span>&gt;</span>充值中心<span class="tag">&lt;/<span class="title">a</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">span</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+</code></pre><p>原始的事件代码：</p>
+<pre><code>$(<span class="string">"#head_setting_item"</span>).mousemove(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+    $(<span class="string">"#head_setting_menu"</span>).show();
+});
+$(<span class="string">"#head_setting_item"</span>).mouseout(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+    $(<span class="string">"#head_setting_menu"</span>).hide();
+});
+</code></pre><p>可以看到，mouse事件是绑定在外层div上，当从外层div移动到弹出层时，会先触发外层div的mouseout事件，再触发其mouseover事件，这种情况在ie6下会出现弹出层闪动。况且，个人认为，mousemove更多应用在拖拽事件中，此处用不合适。</p>
+<p>解决方案：</p>
+<pre><code>$(<span class="string">"#head_setting_item"</span>).hover(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+    $(<span class="string">"#head_setting_menu"</span>).show();
+},<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+    $(<span class="string">"#head_setting_menu"</span>).hide();
+});
+</code></pre><p>Jquery的hover模仿悬停事件，并且解决了mouseout事件中移动到子元素上仍然触发移出事件的错误。</p>
+<h2 id="举例二：非包含结构">举例二：非包含结构</h2>
+<p>在处理悬停事件时尽可能使用上述的包含结构，简单无闪动。但实际上有些情况，并不能做成包含结构，比如事件源是<code>&lt;a&gt;</code>标签，其内部不能加<code>&lt;div&gt;</code>标签（这一点在HTML5中得到支持）。</p>
+<p><img src="/img/hover2.png" alt="悬停事件"></p>
+<p>结构代码：</p>
+<pre><code><span class="tag">&lt;<span class="title">div</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">!—-主题缩略图--</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">a</span> <span class="attribute">title</span>=<span class="value">”点击预览主题”</span> <span class="attribute">class</span>=<span class="value">”prf_onelist”</span> &gt;</span><span class="tag">&lt;<span class="title">img</span> <span class="attribute">src</span>=<span class="value">”#”</span>/&gt;</span><span class="tag">&lt;/<span class="title">a</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">span</span>&gt;</span>默认主题<span class="tag">&lt;/<span class="title">span</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">”#”</span>&gt;</span>预览<span class="tag">&lt;/<span class="title">a</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">”#”</span>&gt;</span>使用<span class="tag">&lt;/<span class="title">a</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">”#”</span>&gt;</span>免费<span class="tag">&lt;/<span class="title">a</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+<span class="tag">&lt;<span class="title">!—-主题简介--</span>&gt;</span>
+<span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">”mousebox”</span> <span class="attribute">style</span>=<span class="value">”display:none”</span>&gt;</span><span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+</code></pre><p>事件代码：</p>
+<pre><code>$(<span class="string">".prf_onelist"</span>).hover(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+    <span class="comment">//鼠标悬停在主题缩略图上，显示弹出层</span>
+    $(<span class="string">". mousebox "</span>).slideDown(<span class="string">"fast"</span>);
+},<span class="function"><span class="keyword">function</span><span class="params">(e)</span>{</span>
+    <span class="comment">//鼠标离开主题缩略图，当前往弹出层时终止事件。否则隐藏弹出层。</span>
+<span class="keyword">if</span>($(<span class="string">".mousebox"</span>)[<span class="number">0</span>].contains(e.relatedTarget)){ <span class="keyword">return</span>;}
+    $(<span class="string">". mousebox "</span>).slideUp(<span class="string">"slow"</span>);
+});
+$(<span class="string">".mouseBox"</span>).hover(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+    <span class="comment">//鼠标悬停于弹出层时不作处理</span>
+},<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+    <span class="comment">//鼠标离开弹出层时隐藏</span>
+$(<span class="string">". mousebox "</span>).slideUp(<span class="string">"slow"</span>);
+})
+
+<span class="comment">//利用回溯为HTML元素定义是否包含某个特定元素的实例方法。</span>
+<span class="keyword">if</span>(<span class="keyword">typeof</span>(HTMLElement)!=<span class="string">"undefined"</span>){
+    HTMLElement.prototype.contains=<span class="function"><span class="keyword">function</span><span class="params">(obj)</span>{</span>
+        <span class="keyword">while</span>(obj!=<span class="literal">null</span>&amp;&amp;<span class="keyword">typeof</span>(obj.tagName)!=<span class="string">"undefind"</span>){ 
+            <span class="keyword">if</span>(obj==<span class="keyword">this</span>) <span class="keyword">return</span> <span class="literal">true</span>;
+            obj=obj.parentNode;
+        }
+        <span class="keyword">return</span> <span class="literal">false</span>;
+    };
+}
+</code></pre></article><nav id="article-pagination"><a href="/2011/09/16/web-strjoin/" title="Previous article: 字符串连接方法在不同浏览器中的性能比较" class="prev">&larr; Previous article</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

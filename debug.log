@@ -1,0 +1,132 @@
+date: 2014-09-28 20:39:28.940
+argv: node /usr/local/bin/hexo generate
+os: Darwin 13.3.0 darwin x64
+version:
+  hexo: 2.7.0
+  http_parser: 1.0
+  node: 0.10.24
+  v8: 3.14.5.9
+  ares: 1.9.0-DEV
+  uv: 0.10.21
+  zlib: 1.2.3
+  modules: 11
+  openssl: 1.0.1e
+---
+
+[debug] 20:39:27.943 Processed: draft.md
+[debug] 20:39:27.944 Processed: page.md
+[debug] 20:39:27.944 Processed: photo.md
+[debug] 20:39:27.944 Processed: post.md
+[debug] 20:39:27.944 Config file loaded
+[debug] 20:39:27.945 Version info checked successfully
+[debug] 20:39:27.963 Loading database.
+[debug] 20:39:28.006 Plugin loaded successfully: hexo-renderer-ejs
+[debug] 20:39:28.264 Plugin loaded successfully: hexo-renderer-jade
+[debug] 20:39:28.307 Plugin loaded successfully: hexo-renderer-less
+[debug] 20:39:28.335 Plugin loaded successfully: hexo-renderer-marked
+[debug] 20:39:28.459 Plugin loaded successfully: hexo-renderer-stylus
+[debug] 20:39:28.642 Processed: _posts/untitled
+[debug] 20:39:28.822 Processed: img/1181067993.png
+[debug] 20:39:28.824 Processed: img/1590598201.jpg
+[debug] 20:39:28.825 Processed: img/2033571645.jpg
+[debug] 20:39:28.826 Processed: img/2203674396.ico
+[debug] 20:39:28.827 Processed: img/2362939812.png
+[debug] 20:39:28.828 Processed: img/24741408.jpg
+[debug] 20:39:28.829 Processed: img/2851295702.jpg
+[debug] 20:39:28.830 Processed: img/2972281614.ico
+[debug] 20:39:28.831 Processed: img/3148731370.png
+[debug] 20:39:28.832 Processed: img/3500739706.png
+[debug] 20:39:28.833 Processed: img/3960939778.png
+[debug] 20:39:28.834 Processed: img/448365624.png
+[debug] 20:39:28.835 Processed: img/725319712.ico
+[debug] 20:39:28.836 Processed: img/815864560.ico
+[debug] 20:39:28.838 Processed: img/98857382.ico
+[debug] 20:39:28.839 Processed: img/992713456.png
+[debug] 20:39:28.839 Processed: img/HK1.jpg
+[debug] 20:39:28.840 Processed: img/HK2.jpg
+[debug] 20:39:28.842 Processed: img/HK3.jpg
+[debug] 20:39:28.844 Processed: img/HK4.jpg
+[debug] 20:39:28.845 Processed: img/HK5.jpg
+[debug] 20:39:28.845 Processed: img/HK6.jpg
+[debug] 20:39:28.846 Processed: img/HK7.jpg
+[debug] 20:39:28.847 Processed: img/crossdomain1.png
+[debug] 20:39:28.848 Processed: img/crossdomain2.png
+[debug] 20:39:28.849 Processed: img/ffExtension1.png
+[debug] 20:39:28.849 Processed: img/ffExtension2.jpg
+[debug] 20:39:28.850 Processed: img/ffExtension3.png
+[debug] 20:39:28.851 Processed: img/ffExtension4.png
+[debug] 20:39:28.852 Processed: img/ffExtension5.png
+[debug] 20:39:28.853 Processed: img/jslint1.png
+[debug] 20:39:28.854 Processed: img/jslint2.png
+[debug] 20:39:28.854 Processed: img/jslint3.png
+[debug] 20:39:28.855 Processed: img/jslint4.png
+[debug] 20:39:28.856 Processed: img/marquee1.png
+[debug] 20:39:28.857 Processed: img/marquee2.png
+[debug] 20:39:28.857 Processed: img/marquee3.png
+[debug] 20:39:28.858 Processed: img/marquee4.png
+[debug] 20:39:28.859 Processed: img/marquee5.png
+[debug] 20:39:28.860 Processed: img/marquee6.png
+[debug] 20:39:28.861 Processed: img/pageTransition1.png
+[debug] 20:39:28.861 Processed: img/pageTransition2.png
+[debug] 20:39:28.862 Processed: img/pageTransition3.png
+[debug] 20:39:28.863 Processed: img/pageTransition4.png
+[debug] 20:39:28.863 Processed: img/pageTransition5.png
+[debug] 20:39:28.864 Processed: img/pageTransition6.png
+[debug] 20:39:28.865 Processed: img/pageTransition7.png
+[debug] 20:39:28.865 Processed: img/prototype1.png
+[debug] 20:39:28.866 Processed: img/prototype2.png
+[debug] 20:39:28.867 Processed: img/scrollfix1.png
+[debug] 20:39:28.868 Processed: img/scrollfix2.png
+[debug] 20:39:28.868 Processed: img/scrollfix3.png
+[debug] 20:39:28.869 Processed: img/scrollfix4.png
+[debug] 20:39:28.870 Processed: img/snowflake.png
+[debug] 20:39:28.871 Processed: img/webmap1.png
+[debug] 20:39:28.872 Processed: img/webmap2.png
+[debug] 20:39:28.873 Processed: img/webmap3.png
+[debug] 20:39:28.874 Processed: img/webmap4.png
+[debug] 20:39:28.876 Processed: img/webmap5.png
+[debug] 20:39:28.877 Processed: img/websql.png
+[debug] 20:39:28.878 Processed: img/yahooTech1.jpg
+[debug] 20:39:28.878 Processed: img/yahooTech2.png
+[debug] 20:39:28.879 Processed: img/yahooTech3.jpg
+[debug] 20:39:28.879 Processed: img/yahooTech4.jpg
+[debug] 20:39:28.887 Processed: LICENSE
+[debug] 20:39:28.887 Processed: README.md
+[debug] 20:39:28.894 Processed: source/stylesheets/_layout/layout.less
+[debug] 20:39:28.894 Processed: source/stylesheets/_base/base.less
+[debug] 20:39:28.894 Processed: source/stylesheets/_base/reset.less
+[debug] 20:39:28.894 Processed: source/stylesheets/_base/typography.less
+[debug] 20:39:28.894 Processed: source/stylesheets/_base/variables.less
+[debug] 20:39:28.894 Processed: source/stylesheets/_plugins/syntax.less
+[debug] 20:39:28.895 Processed: source/stylesheets/app.less
+[error] 20:39:28.909 HexoError: Process failed: _posts/trans-ffextention.md
+SyntaxError: Unexpected token ILLEGAL
+    at Object.Function (<anonymous>)
+    at precompile (/usr/local/lib/node_modules/hexo/node_modules/swig/lib/swig.js:489:11)
+    at compile (/usr/local/lib/node_modules/hexo/node_modules/swig/lib/swig.js:584:16)
+    at Object.render (/usr/local/lib/node_modules/hexo/node_modules/swig/lib/swig.js:513:17)
+    at /usr/local/lib/node_modules/hexo/lib/post/render.js:61:29
+    at /usr/local/lib/node_modules/hexo/node_modules/async/lib/async.js:610:21
+    at /usr/local/lib/node_modules/hexo/node_modules/async/lib/async.js:249:17
+    at iterate (/usr/local/lib/node_modules/hexo/node_modules/async/lib/async.js:149:13)
+    at async.eachSeries (/usr/local/lib/node_modules/hexo/node_modules/async/lib/async.js:165:9)
+    at _asyncMap (/usr/local/lib/node_modules/hexo/node_modules/async/lib/async.js:248:13)
+
+[debug] 20:39:28.915 Cache saved
+[debug] 20:39:28.918 Processed: layout/archive.jade
+[debug] 20:39:28.919 Processed: layout/base.jade
+[debug] 20:39:28.919 Processed: layout/category.jade
+[debug] 20:39:28.919 Processed: layout/index.jade
+[debug] 20:39:28.919 Processed: layout/page.jade
+[debug] 20:39:28.919 Processed: layout/post.jade
+[debug] 20:39:28.919 Processed: layout/words.jade
+[debug] 20:39:28.919 Processed: layout/writings.jade
+[debug] 20:39:28.919 Processed: layout/_partial/article_list_pagination.jade
+[debug] 20:39:28.919 Processed: layout/_partial/article_meta.jade
+[debug] 20:39:28.919 Processed: layout/_partial/article_pagination.jade
+[debug] 20:39:28.919 Processed: layout/_partial/footer.jade
+[debug] 20:39:28.919 Processed: layout/_partial/head.jade
+[debug] 20:39:28.951 Theme config loaded
+[debug] 20:39:28.951 Processed: _config.yml
+[debug] 20:39:28.952 Processed: languages/de.yml
+[debug] 20:39:28.952 Processed: languages/default.yml

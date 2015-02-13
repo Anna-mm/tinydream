@@ -1,0 +1,1799 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title><![CDATA[枫桥夜泊]]></title>
+  <subtitle><![CDATA[梦想走着走着就丢了 只想充实地过每一天 每天都有挑战]]></subtitle>
+  <link href="/atom.xml" rel="self"/>
+  <link href="http://yoursite.com/"/>
+  <updated>2014-10-13T11:15:30.079Z</updated>
+  <id>http://yoursite.com/</id>
+  
+  <author>
+    <name><![CDATA[枫桥]]></name>
+    <email><![CDATA[ajiao5198@163.com]]></email>
+  </author>
+  
+  <generator uri="http://zespia.tw/hexo/">Hexo</generator>
+  
+  <entry>
+    <title><![CDATA[jQuery事件系统三]]></title>
+    <link href="http://yoursite.com/2014/10/13/js-event3/"/>
+    <id>http://yoursite.com/2014/10/13/js-event3/</id>
+    <published>2014-10-13T07:34:49.000Z</published>
+    <updated>2014-10-13T11:13:58.000Z</updated>
+    <content type="html"><![CDATA[<p>上一节通过给DOM元素添加自定义数据引出jQuery.data这个数据缓存模块，这是数据缓存系统的另一大重头戏，这一节就好好说说jQuery.data.<br>再看jquery源码之前大概大概明确几个要点：<br>1、jQuery.expando = “jQuery” + ( jQuery.fn.jquery + Math.random() ).replace( /\D/g, “” )，即jQuery＋版本号＋随机数；<br>2、jQuery.data方法通过参数的不同，可以有几种用法：为DOM元素或Javascript对象设置任意类型的数据，或返回指定名称的数据，或返回关联的数据缓存对象。<br>3、数据缓存对象上区分内部数据和自定义数据，避免jQuery内部使用的数据和用户自定义的数据发生冲突。<br>._data()设置的数据为内部数据，直接存储在关联的数据存储对象上，如事件缓存数据。<br>.data()设置的数据为自定义数据，存储在关联的数据缓存对象的属性data上；如用户通过data-*自定义数据。</p>
+<pre><code> <span class="variable">$(</span><span class="string">".content"</span>).data({<span class="string">"tagName"</span><span class="symbol">:<span class="string">"div"</span></span>,<span class="string">"className"</span><span class="symbol">:<span class="string">"content"</span></span>});
+</code></pre><p> 在上节栗子中设置content元素的自定义属性如下，存储位置如下：</p>
+<p> <img src="/img/jsevent3.png" alt="数据缓存系统"></p>
+<p> 总结一下：上节中通过jQuery._data设置DOM元素的内部属性，事实上是通过jQuery.data实现的，只是传递pvt参数为true，在jQuery.cache上顺序挂上key值为1、2、3…依此类推的数据缓存对象。同时设置DOM元素本身的属性elem[ jQuery.expando ] = id；以此来关联数据缓存系统。</p>
+<pre><code>jQuery.extend({
+    cache: {},<span class="comment">//事件缓存系统</span>
+    deletedIds: [],
+    uuid: <span class="number">0</span>,<span class="comment">// uuid初始化</span>
+    <span class="comment">// 生成类似于jQuery18005268001211807132这样的随机数（），避免与用户的自定义属性名冲突</span>
+    expando: <span class="string">"jQuery"</span> + ( jQuery.fn.jquery + <span class="built_in">Math</span>.random() ).replace( <span class="regexp">/\D/g</span>, <span class="string">""</span> ),
+    <span class="comment">//jQuery.noData中存放了不支持扩展属性的embed、object、applet元素的节点名称。</span>
+    noData: {
+        <span class="string">"embed"</span>: <span class="literal">true</span>,
+        <span class="comment">// Ban all objects except for Flash (which handle expandos)</span>
+        <span class="string">"object"</span>: <span class="string">"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"</span>,<span class="comment">//用于检查object元素是否是flash</span>
+        <span class="string">"applet"</span>: <span class="literal">true</span>
+    },
+
+    <span class="comment">//判断一个DOM元素或javascript对象是否有关联的数据</span>
+    hasData: <span class="function"><span class="keyword">function</span><span class="params">( elem )</span> {</span>
+        elem = elem.nodeType ? jQuery.cache[ elem[jQuery.expando] ] : elem[ jQuery.expando ];
+        <span class="keyword">return</span> !!elem &amp;&amp; !isEmptyDataObject( elem );
+    },
+
+    <span class="comment">//为DOM元素或javascript对象设置任何类型的数据</span>
+    data: <span class="function"><span class="keyword">function</span><span class="params">( elem, name, data, pvt <span class="comment">/* Internal Use Only */</span> )</span> {</span>
+        <span class="comment">//是否可以附加数据，不可以的话直接返回</span>
+        <span class="keyword">if</span> ( !jQuery.acceptData( elem ) ) {
+            <span class="keyword">return</span>;
+        }
+        <span class="keyword">var</span> thisCache, ret,
+            <span class="comment">//jQuery.expando是一个唯一的字符串，jquery对象产生的时候就生成</span>
+            internalKey = jQuery.expando,
+            getByName = <span class="keyword">typeof</span> name === <span class="string">"string"</span>,
+
+            <span class="comment">// 区分DOM对象和javascript对象，如果是DOM元素，为了避免javascript和DOM元素之间循环引用导致的浏览器（IE6、7）垃圾回收机制不起作用，要把数据存储在全局缓存对象jQuery.cache中；对于Javascript对象，垃圾回收机制自动发生，数据可以之间存储在javascript对象上。</span>
+            isNode = elem.nodeType,
+            ......
+        <span class="comment">//如果关联id不存在，则分配一个。</span>
+        <span class="keyword">if</span> ( !id ) {
+            <span class="keyword">if</span> ( isNode ) {
+                elem[ internalKey ] = id = jQuery.deletedIds.pop() || ++jQuery.uuid;
+            } <span class="keyword">else</span> {
+                id = internalKey;
+            }
+        }
+        <span class="comment">//如果数据缓存对象不存在，就初始化为空对象</span>
+        <span class="keyword">if</span> ( !cache[ id ] ) {
+            cache[ id ] = {};
+            ......
+        }
+        <span class="comment">// 如果参数name是对象或函数，则批量设置数据</span>
+        <span class="keyword">if</span> ( <span class="keyword">typeof</span> name === <span class="string">"object"</span> || <span class="keyword">typeof</span> name === <span class="string">"function"</span> ) {
+            <span class="keyword">if</span> ( pvt ) {
+                cache[ id ] = jQuery.extend( cache[ id ], name );
+            } <span class="keyword">else</span> {
+                cache[ id ].data = jQuery.extend( cache[ id ].data, name );
+            }
+        }
+        thisCache = cache[ id ];
+        <span class="comment">// 如果参数pvt为true，则设置或读取内部数据，内部数据存储在关联的数据存储对象上；</span>
+        <span class="comment">// 如果参数pvt为false，则设置或读取自定义数据，自定义数据存储在关联的数据缓存对象的属性data上。</span>
+        <span class="keyword">if</span> ( !pvt ) {
+            <span class="keyword">if</span> ( !thisCache.data ) {
+                thisCache.data = {};
+            }
+
+            thisCache = thisCache.data;
+        }
+        <span class="comment">//如果参数data不是undefined，则把参数data设置到属性name上。把name统一换成驼峰式。</span>
+        <span class="keyword">if</span> ( data !== <span class="literal">undefined</span> ) {
+            thisCache[ jQuery.camelCase( name ) ] = data;
+        }
+        <span class="comment">// 参数name为字符串，data为null时读取单个数据。两次读取，使用name读取一次，使用驼峰式再读取一次。</span>
+        <span class="keyword">if</span> ( getByName ) {
+
+            <span class="comment">// First Try to find as-is property data</span>
+            ret = thisCache[ name ];
+
+            <span class="comment">// Test for null|undefined property data</span>
+            <span class="keyword">if</span> ( ret == <span class="literal">null</span> ) {
+
+                <span class="comment">// Try to find the camelCased property</span>
+                ret = thisCache[ jQuery.camelCase( name ) ];
+            }
+        } <span class="keyword">else</span> {
+            <span class="comment">//未传入参数name、data、则返回数据缓存对象。</span>
+            ret = thisCache;
+        }
+        <span class="keyword">return</span> ret;
+    },
+    <span class="comment">//用于移除通过jQuery.data()设置的数据</span>
+    removeData: <span class="function"><span class="keyword">function</span><span class="params">( elem, name, pvt <span class="comment">/* Internal Use Only */</span> )</span> {</span>
+        ......
+    },
+    <span class="comment">// 设置或读取内部数据时使用</span>
+    _data: <span class="function"><span class="keyword">function</span><span class="params">( elem, name, data )</span> {</span>
+        <span class="keyword">return</span> jQuery.data( elem, name, data, <span class="literal">true</span> );
+    },
+    <span class="comment">// 判断DOM元素是否可以设置数据，通过检查DOM元素的节点名称在对象jQuery.noData中是否存在</span>
+    acceptData: <span class="function"><span class="keyword">function</span><span class="params">( elem )</span> {</span>
+        <span class="keyword">var</span> noData = elem.nodeName &amp;&amp; jQuery.noData[ elem.nodeName.toLowerCase() ];
+        <span class="keyword">return</span> !noData || noData !== <span class="literal">true</span> &amp;&amp; elem.getAttribute(<span class="string">"classid"</span>) === noData;
+    }
+});
+</code></pre><p>本节内容参考《jQuery技术内幕》第五章数据缓存Data</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>上一节通过给DOM元素添加自定义数据引出jQuery.data这个数据缓存模块，这是数据缓存系统的另一大重头戏，这一节就好好说说jQuery.data.<br>再看jquery源码之前大概大概明确几个要点：<br>1、jQuery.expando = “jQuery” + ]]>
+    </summary>
+    
+      <category term="jQuery event 事件 数据缓存 W3C 浏览器" scheme="http://yoursite.com/tags/jQuery-event-%E4%BA%8B%E4%BB%B6-%E6%95%B0%E6%8D%AE%E7%BC%93%E5%AD%98-W3C-%E6%B5%8F%E8%A7%88%E5%99%A8/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[jQuery事件系统二]]></title>
+    <link href="http://yoursite.com/2014/10/11/js-event2/"/>
+    <id>http://yoursite.com/2014/10/11/js-event2/</id>
+    <published>2014-10-11T10:01:11.000Z</published>
+    <updated>2014-10-12T16:23:06.000Z</updated>
+    <content type="html"><![CDATA[<p>jQuery事件系统并没有将事件监听函数直接绑定到DOM元素上，而是基于数据缓存系统管理监听函数的。举一个简单的栗子看一下何为数据缓存系统：</p>
+<pre><code><span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"box"</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"content"</span>&gt;</span><span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+<span class="tag">&lt;<span class="title">input</span> <span class="attribute">type</span>=<span class="value">"button"</span> <span class="attribute">name</span>=<span class="value">"submit"</span> <span class="attribute">value</span>=<span class="value">"click me"</span> <span class="attribute">class</span>=<span class="value">"btn"</span> /&gt;</span>
+
+<span class="tag">&lt;<span class="title">script</span> <span class="attribute">type</span>=<span class="value">"text/javascript"</span>&gt;</span><span class="javascript">
+    $(<span class="string">".box"</span>).click(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        console.log(<span class="string">"box"</span>);
+    })
+    $(<span class="string">".content"</span>).click(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        console.log(<span class="string">"content click 1"</span>);
+    })
+    $(<span class="string">".content"</span>).click(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        console.log(<span class="string">"content click 2"</span>);
+    }) 
+    $(<span class="string">".content"</span>).hover(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        console.log(<span class="string">"hover in"</span>);
+    },<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        console.log(<span class="string">"hover out"</span>);
+    }) 
+    $(<span class="string">".btn"</span>).click(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        console.log(<span class="string">"btn"</span>);
+    }) 
+</span><span class="tag">&lt;/<span class="title">script</span>&gt;</span>
+</code></pre><p>如上述代码所示，页面上有一对父子元素box、content和一个按钮btn。</p>
+<ul>
+<li>父元素box绑定了click事件</li>
+<li>子元素content绑定了两个click事件，一个hover事件</li>
+<li>btn元素绑定了一个click事件。</li>
+</ul>
+<p>我们看一下chrome下面打印jQuery.cache是什么情况：<br><img src="/img/jsevent1.png" alt="jQuery事件系统"></p>
+<p>由上图所示，</p>
+<ul>
+<li>jQuery.cache中存储了三个以ID为key值的对象，三个ID是为页面中的box、content、btn元素分配的唯一ID。</li>
+<li>每个object中存储了events和handle两个对象。</li>
+<li>events对象存储了click、mouseout、mouseover三个事件对象，click对象的值是一个存储了两个元素的数组，对应content元素的两个click事件和hover事件。</li>
+<li>click[0]的数组元素中存储了一个guid，唯一标识事件处理函数的ID，以此类推jQuery.cache[1].events.click[0].guid == 1, jQuery.cache[2].events.click[1].guid == 3；存储了一个type＝“click”；存储了一个事件处理函数handler，参见上图底部，是content元素绑定得第一个click事件的处理函数。</li>
+<li>那回到最外层，每个object的直接子元素handle是干什么用的？通过打印的内容可见，其方法体内调用了jQuery.events.dispatch事件。事实上，每个object对象都有一个handle作为入口监听函数，当浏览器触发事件时，入口监听函数被调用，该函数从事件缓存对象events中获取绑定到此元素上的对应的事件处理函数，然后执行。</li>
+</ul>
+<p>问题来了，jQuery.cache中没有存储任何与页面元素有关的信息，其中的1、2、3是如何对应到DOM元素的？一定在什么地方给DOM元素设置了自定义属性存储了其ID值。</p>
+<p><img src="/img/jsevent2.png" alt="jQuery事件系统"></p>
+<p>如上图所示，代码来源于jQuery.event.add方法，给派发函数传递的第一个参数当前的DOM元素已经有一个自定义属性jQueryXXXX==2，接下来寻找何处设置了这个自定义属性。</p>
+<pre><code>jQuery.event = {
+
+    add: <span class="function"><span class="keyword">function</span><span class="params">( elem, types, handler, data, selector )</span> {</span>
+
+        <span class="keyword">var</span> elemData, eventHandle, events,
+            t, tns, type, namespaces, handleObj,
+            handleObjIn, handlers, special;
+
+        <span class="comment">//通过jQuery._data给当前DOM元素设置自定义数据</span>
+        <span class="keyword">if</span> ( elem.nodeType === <span class="number">3</span> || ... || !(elemData = jQuery._data( elem )) ) {
+            <span class="keyword">return</span>;
+        }
+        ......
+    }
+}
+
+jQuery.extend({
+    data: <span class="function"><span class="keyword">function</span><span class="params">( elem, name, data, pvt)</span> {</span>
+
+        <span class="keyword">var</span> thisCache, ret,
+            internalKey = jQuery.expando, <span class="comment">//这个自定义属性来自与expando，这是什么东西？？</span>
+            getByName = <span class="keyword">typeof</span> name === <span class="string">"string"</span>,
+
+        <span class="keyword">if</span> ( !id ) {
+            <span class="comment">// 给DOM元素设置一个unique ID，以获取全局的数据缓存对象中的对应数据</span>
+            <span class="keyword">if</span> ( isNode ) {
+                elem[ internalKey ] = id = jQuery.deletedIds.pop() || ++jQuery.uuid;
+            } <span class="keyword">else</span> {
+                id = internalKey;
+            }
+        }
+        ......
+    },
+    _data: <span class="function"><span class="keyword">function</span><span class="params">( elem, name, data )</span> {</span>
+        <span class="keyword">return</span> jQuery.data( elem, name, data, <span class="literal">true</span> );
+    },
+},
+</code></pre><p>好，我们知道了DOM元素的ID与jQuery.cache中的对象ID是一一对应的，在派发函数dispatch中通过种对应关系就能方便地找到当前DOM元素所绑定的事件从而执行。不过，顺着这个线索也遗留了一些问题，比如jQuery.expando是什么？jQuery.data除了DOM ID还设置了那些属性？事件派发函数中对于子元素的click事件冒泡到父元素是如何处理的？且听下回分解。</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>jQuery事件系统并没有将事件监听函数直接绑定到DOM元素上，而是基于数据缓存系统管理监听函数的。举一个简单的栗子看一下何为数据缓存系统：</p>
+<pre><code><span class="tag">&lt;<span class="title">div</span]]>
+    </summary>
+    
+      <category term="jQuery event 事件 数据缓存 W3C 浏览器" scheme="http://yoursite.com/tags/jQuery-event-%E4%BA%8B%E4%BB%B6-%E6%95%B0%E6%8D%AE%E7%BC%93%E5%AD%98-W3C-%E6%B5%8F%E8%A7%88%E5%99%A8/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[jQuery事件系统一]]></title>
+    <link href="http://yoursite.com/2014/10/10/js-event1/"/>
+    <id>http://yoursite.com/2014/10/10/js-event1/</id>
+    <published>2014-10-10T09:16:59.000Z</published>
+    <updated>2014-10-12T16:29:40.000Z</updated>
+    <content type="html"><![CDATA[<p>说到Javascript事件，脑海中闪现的是最初做简单网页时写个button，注册个onclick事件，就出现了简单的交互。那么onclick，和后续接触到的原生JS中的DOM0、DOM2、addEventListener、attachEvent、jQuery中的bind、live、delegate、on等是什么关系，如何演化的。一个简单的onclick为什么会发展成复杂的jQuery事件系统以及数据缓存系统。今天只是一个引子：</p>
+<h2 id="DOM0级事件系统">DOM0级事件系统</h2>
+<pre><code>document.getElementById(<span class="string">"btn"</span>).onclick = <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+    alert(<span class="built_in">arguments</span>.length);
+}
+</code></pre><p>这是是最简单的绑定事件的方式。再早之前就是元素标签内绑定事件，不推荐这种样式行为混在一起的写法。</p>
+<p>优势：<br>简单稳定，浏览器兼容；处理事件时，this关键字处理的是当前元素，这很有帮助。<br>劣势：<br>1、只允许元素每次绑定一个回调，重复绑定会覆盖之前的绑定。<br>2、在IE下回调没有参数，在其他浏览器下回调的第一个参数是事件对象。上述代码在IE下弹出0，而在Firefox下弹出1，这个参数就是event对象。<br>3、只能在事件冒泡中运行，而非捕获或冒泡。</p>
+<h2 id="DOM2级事件系统">DOM2级事件系统</h2>
+<p>IE：</p>
+<pre><code>element.attachEvent(<span class="string">"on"</span> + <span class="class"><span class="keyword">type</span>, <span class="title">callback</span>); //绑定事件</span>
+element.detachEvent(<span class="string">"on"</span> + <span class="class"><span class="keyword">type</span>, <span class="title">callback</span>); //解除绑定</span>
+document.createEventObject(); <span class="comment">//创建事件</span>
+element.fireEvent(<span class="class"><span class="keyword">type</span>, <span class="title">event</span>); //派发事件</span>
+</code></pre><p>优势：<br>可绑定多个事件，不会覆盖<br>劣势：<br>1、回调函数中this不是指向被绑定元素，而是window<br>2、同种事件绑定多个回调时，回调并不是按照绑定时的顺序依次触发（这还真是头一次听说）<br>3、event事件对象仅存在于window.event参数中，其属性与W3C的有很大差异，比如currentTarget<br>4、事件必须以onXXX形式，仅IE可用<br>5、只支持冒泡</p>
+<p>W3C：</p>
+<pre><code><span class="keyword">element</span>.addEventListener(type, callback, [phase]);<span class="comment"> //绑定事件</span>
+<span class="keyword">element</span>.removeEventListener(type, callback, [phase]);<span class="comment"> //解除绑定</span>
+<span class="keyword">element</span>.createEvent(types);<span class="comment"> //创建事件</span>
+event.initEvent();<span class="comment"> //初始化事件</span>
+<span class="keyword">element</span>.dispatchEvent(event);<span class="comment"> //派发事件</span>
+</code></pre><p>优势：<br>1、同时支持事件处理的捕获和冒泡阶段，事件阶段取决于参数设置<br>2、事件处理函数内部，this引用当前元素<br>3、事件对象总是可以通过处理函数的第一个参数获取<br>4、可以绑定多个事件</p>
+<p>劣势：其他标准浏览器的实现也有不一致的地方，比如firefox不支持focusin、focus事件，第三四五个参数的使用，事件成员对象的不稳定，如safari下event.target可能时返回文本节点。</p>
+<p>为了兼容浏览器，我们通常会创建一个统一的方法，在方法内部通过特性检测分别调用不用的事件模型。</p>
+<pre><code><span class="comment">//绑定事件</span>
+<span class="keyword">function</span> addEvent(el, <span class="class"><span class="keyword">type</span>, <span class="title">callback</span>, <span class="title">useCapture</span>){</span>
+    <span class="keyword">if</span>(el.addEventListener){<span class="comment">//W3C方式优先</span>
+        el.addEventListener(<span class="class"><span class="keyword">type</span>, <span class="title">callback</span>, !!<span class="title">useCapture</span>);</span>
+    }
+    <span class="keyword">else</span>{
+        el.attachEvent(<span class="string">"on"</span> + <span class="class"><span class="keyword">type</span>, <span class="title">callback</span>);</span>
+    }
+}
+<span class="comment">//移除事件</span>
+<span class="keyword">function</span> removeEvent(el, <span class="class"><span class="keyword">type</span>, <span class="title">callback</span>, <span class="title">useCapture</span>){</span>
+    <span class="keyword">if</span>(el.removeEventListener){<span class="comment">//W3C方式优先</span>
+        el.removeEventListener(<span class="class"><span class="keyword">type</span>, <span class="title">callback</span>, !!<span class="title">useCapture</span>);</span>
+    }
+    <span class="keyword">else</span>{
+        el.detachEvent(<span class="string">"on"</span> + <span class="class"><span class="keyword">type</span>, <span class="title">callback</span>);</span>
+    }
+}
+<span class="comment">//派发事件</span>
+<span class="keyword">function</span> fireEvent(el, <span class="class"><span class="keyword">type</span>){</span>
+    <span class="keyword">if</span>(el.createEvent){
+        event = document.createEvent(<span class="string">"HTMLEvents"</span>);
+        event.initEvent(<span class="class"><span class="keyword">type</span>, <span class="title">true</span>, <span class="title">true</span>);</span>
+        el.dispatchEvent(event);
+    }
+    <span class="keyword">else</span>{
+        event = document.createEventObject();
+        el.fireEvent(<span class="string">"on"</span> + <span class="class"><span class="keyword">type</span>, <span class="title">event</span>);</span>
+    }
+}
+<span class="comment">//延伸</span>
+<span class="comment">//阻止冒泡的通用函数</span>
+<span class="keyword">function</span> stopBubble(e){
+    <span class="keyword">if</span>(e &amp;&amp; e.stopPropagation){ <span class="comment">//W3C方式</span>
+        e.stopPropagation();
+    }
+    <span class="keyword">else</span>{
+        window.event.cancelBubble = <span class="keyword">true</span>; <span class="comment">//IE</span>
+    }
+}
+<span class="comment">//阻止浏览器默认行为的通用函数</span>
+<span class="keyword">function</span> stopDefault(){
+    <span class="keyword">if</span>(e &amp;&amp; e.preventDefault){ <span class="comment">//W3C方式</span>
+        e.preventDefault();
+    }
+    ele{
+        window.event.returnValue = <span class="keyword">false</span>; <span class="comment">//IE</span>
+    }
+}
+</code></pre><p>fireEvent与调用onClick的区别：<br>派发事件fireEvent模拟用户行为触发事件，如触发一个button的onclick事件，如果该button未注册onclick事件也不会报错，并且会引发冒泡，触发其父类中的onclick事件，更贴近用户真实的触发行为。那如果直接调用onclick()呢？如果在未注册onclick事件时调用onclick将会报错“对象不支持此属性或方法”。</p>
+<h2 id="Dean_Edward_&amp;&amp;_event-js">Dean Edward &amp;&amp; event.js</h2>
+<p>鉴于DOM2级事件系统的缺陷，Dean Edward提出了更完美的解决方案，成为jQuery事件系统的源头，看它是不是长了三头六臂，代码来自<a href="http://dean.edwards.name/weblog/2005/10/add-event/" target="_blank" rel="external">http://dean.edwards.name/weblog/2005/10/add-event/</a></p>
+<pre><code><span class="function"><span class="keyword">function</span> <span class="title">addEvent</span><span class="params">(element, type, handler)</span> {</span>
+    <span class="comment">// 为每一个事件处理函数分派一个唯一的ID，方便移除</span>
+    <span class="keyword">if</span> (!handler.$$guid) handler.$$guid = addEvent.guid++;
+    <span class="comment">// 为元素的事件类型创建一个空对象，保存所有类型的回调</span>
+    <span class="keyword">if</span> (!element.events) element.events = {};
+    <span class="comment">// events对象包含多个type/handlers这样的键值对</span>
+    <span class="keyword">var</span> handlers = element.events[type];
+    <span class="keyword">if</span> (!handlers) {
+        handlers = element.events[type] = {};
+        <span class="comment">// 如果元素之前以onXXX的形式绑定过事件，则存储起来</span>
+        <span class="keyword">if</span> (element[<span class="string">"on"</span> + type]) {
+            handlers[<span class="number">0</span>] = element[<span class="string">"on"</span> + type];
+        }
+    }
+    <span class="comment">// 保存当前的事件处理函数</span>
+    handlers[handler.$$guid] = handler;
+    <span class="comment">// 指定一个全局的事件处理函数来做所有的工作</span>
+    element[<span class="string">"on"</span> + type] = handleEvent;
+};
+<span class="comment">// 事件处理函数ID计数器</span>
+addEvent.guid = <span class="number">1</span>;
+
+<span class="function"><span class="keyword">function</span> <span class="title">removeEvent</span><span class="params">(element, type, handler)</span> {</span>
+    <span class="comment">// 从events对象移除当前事件处理函数/函数类型</span>
+    <span class="keyword">if</span> (element.events &amp;&amp; element.events[type]) {
+        <span class="keyword">delete</span> element.events[type][handler.$$guid];
+    }
+};
+
+<span class="comment">//统一的事件处理函数入口</span>
+<span class="function"><span class="keyword">function</span> <span class="title">handleEvent</span><span class="params">(event)</span> {</span>
+    <span class="keyword">var</span> returnValue = <span class="literal">true</span>;
+    <span class="comment">// 获取原生的事件对象</span>
+    event = event || fixEvent(window.event);
+    <span class="comment">// 从元素的事件对象上获取事件处理函数</span>
+    <span class="keyword">var</span> handlers = <span class="keyword">this</span>.events[event.type];
+    <span class="comment">// 遍历执行事件处理函数</span>
+    <span class="keyword">for</span> (<span class="keyword">var</span> i <span class="keyword">in</span> handlers) {
+        <span class="keyword">this</span>.$$handleEvent = handlers[i];
+        <span class="keyword">if</span>(<span class="keyword">this</span>.$$handleEvent(event)===<span class="literal">false</span>){
+            returnValue = <span class="literal">false</span>;
+        };
+    }
+};
+<span class="comment">//为IE的事件对象做简单的修复</span>
+<span class="function"><span class="keyword">function</span> <span class="title">fixEvent</span><span class="params">(event)</span> {</span>
+    <span class="comment">//添加标准的W3C方法</span>
+    event.preventDefault = fixEvent.preventDefault;
+    event.stopPropagation = fixEvent.stopPropagation;
+    <span class="keyword">return</span> event;
+};
+fixEvent.preventDefault = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+    <span class="keyword">this</span>.returnValue = <span class="literal">false</span>;
+};
+fixEvent.stopPropagation = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+    <span class="keyword">this</span>.cancelBubble = <span class="literal">true</span>;
+};
+</code></pre><p>特点：<br>1、没有对象检测，因为使用最通用的原始的onXXX绑定，不使用addEventListener/attachEvent<br>2、保持正确的this指向<br>3、传递了正确的event对象<br>4、完全跨浏览器包括IE4或NS4<br>5、不会引发内存泄漏（使用者发现onXXX在IE存在不可消弭的内存泄漏）</p>
+<p>jQuery在这个版本基础上吸收了“每个处理函数分配一个unique ID，所有回调放到一个对象上存储”的建议，出现了jQuery的数据缓存系统，同时舍弃了onXXX方式，仍然使用addEventListener/attachEvent绑定事件。</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>说到Javascript事件，脑海中闪现的是最初做简单网页时写个button，注册个onclick事件，就出现了简单的交互。那么onclick，和后续接触到的原生JS中的DOM0、DOM2、addEventListener、attachEvent、jQuery中的bind、]]>
+    </summary>
+    
+      <category term="jQuery event 事件 数据缓存 W3C 浏览器" scheme="http://yoursite.com/tags/jQuery-event-%E4%BA%8B%E4%BB%B6-%E6%95%B0%E6%8D%AE%E7%BC%93%E5%AD%98-W3C-%E6%B5%8F%E8%A7%88%E5%99%A8/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[<回到顶部>功能该谁做]]></title>
+    <link href="http://yoursite.com/2014/09/03/per-gototop/"/>
+    <id>http://yoursite.com/2014/09/03/per-gototop/</id>
+    <published>2014-09-03T05:24:37.000Z</published>
+    <updated>2014-09-26T06:29:17.000Z</updated>
+    <content type="html"><![CDATA[<p>当我用Macbook浏览长网页的时候，拉着拉着就得找&lt;回到顶部&gt;按钮。如果网页没有这个功能，就得自己拖回滚动条。为了更美观不碍眼，滚动条早已在不用的时候就隐藏起来，需要上下移动网页才显示，再将鼠标移动到小窄条上，左右手配合拖回顶部，真费劲。还不如在网页的鼠标右键上增加&lt;回到顶部&gt;的功能，单手操作两次点击即可。不如来个彻底，将&lt;回到顶部&gt;功能交给浏览器来做，顺便做个快捷键，也免得前端开发人员到处搞个&lt;回到顶部&gt;，或者什么时候闲来无事，搞个浏览器插件gotoTop，看看有没有人用。<a id="more"></a></p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>当我用Macbook浏览长网页的时候，拉着拉着就得找&lt;回到顶部&gt;按钮。如果网页没有这个功能，就得自己拖回滚动条。为了更美观不碍眼，滚动条早已在不用的时候就隐藏起来，需要上下移动网页才显示，再将鼠标移动到小窄条上，左右手配合拖回顶部，真费劲。还不如在网页的鼠标右键上增加&lt;回到顶部&gt;的功能，单手操作两次点击即可。不如来个彻底，将&lt;回到顶部&gt;功能交给浏览器来做，顺便做个快捷键，也免得前端开发人员到处搞个&lt;回到顶部&gt;，或者什么时候闲来无事，搞个浏览器插件gotoTop，看看有没有人用。]]>
+    
+    </summary>
+    
+      <category term="浏览器,回到顶部" scheme="http://yoursite.com/tags/%E6%B5%8F%E8%A7%88%E5%99%A8,%E5%9B%9E%E5%88%B0%E9%A1%B6%E9%83%A8/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[香港之行]]></title>
+    <link href="http://yoursite.com/2014/08/18/per-hk/"/>
+    <id>http://yoursite.com/2014/08/18/per-hk/</id>
+    <published>2014-08-18T15:40:58.000Z</published>
+    <updated>2014-09-26T16:02:41.000Z</updated>
+    <content type="html"><![CDATA[<p>不想流水账一样写一篇攻略，如果有需要咨询的同学可以留言，必将知无不言，言无不尽。不想写”香港是自由与信念的国度“这样上纲上线的文章，只是就自己的所见发表一些所感。之前大Boss说我的视野有限，再不出去见识见识，就无法跟我交流了。我转了一圈回来了，恐怕也不能如他所愿感受到“外面的世界很精彩”。</p>
+<p><img src="/img/HK1.jpg" alt="车窗外的风景"></p>
+<p>自由：</p>
+<p>说了不说还得说。自由是入关时让我摘下胸前背的双肩包检查是否怀孕。自由是进入地铁不再安检，也没有人在你身前身后探来探去。自由是地铁庞大的广告牌上写着“2017年要人手一票实现普选否则占领中环”。自由是路边书摊各种大陆政治内幕。不愧是当过英国殖民地，像是过给了有钱人家的孩子，现在回来了要求家长像有钱人家那样礼遇他。自由是社会进步的标识，我们被禁锢惯了，就皮实了，捏一下打一下也不还手，他们就很矫情，碰一下就叫。而在他们看来，我们又是什么人？没见过世面的乡巴佬，蹑手蹑脚地遵守规则。那又怎么样，自由迟早会有，你们只是走在前面而已。</p>
+<p>寸土寸金：</p>
+<p>香港真是一个寸土寸金的地方，我们住在红茶馆酒店，设施很完善，过道很狭小，同时只能容纳一个人通过。很多店铺也很小，打开大众点评app，选一个美食排名前三甲的餐厅好好挥霍一下，进去一看，小得还不如庆丰包子铺。</p>
+<p><img src="/img/HK2.jpg" alt="维多利亚港"></p>
+<p>美食：</p>
+<p>吃了港式美食，我都汗颜觉得之前吃的怎么这么糙呢。就说那$86一碗的蟹黄粥，真的超级超级好吃。大米粥（号称白粥）里面放了青菜、虾仁、螃蟹和散落的蟹黄，尤其是蟹黄特别好吃。之前吃粥就是吃粥，顶多几种豆类的混合，绿豆粥、南瓜粥、大米粥、小米粥，谁家还往粥里放大螃蟹呀。搞个粥都这么复杂。说到复杂，我有一次随便吃了一个餐馆的“龙凤球”，面相更像是糖醋里脊，终于吃到一个内地菜了就很兴奋，吃着吃着内容就来了。挑起一块“里脊”，吃到里面是鸡肉，再挑一块，鱼肉，原来是这么个龙凤球。再说说配菜，洋葱、青辣椒、红辣椒、黄辣椒、菠萝块，我了个去，辣椒都配了三种，还放水果。真替厨师麻烦。</p>
+<p><img src="/img/HK3.jpg" alt="蟹黄粥"></p>
+<p>化妆品：</p>
+<p>大街小巷到处都是卓悦、莎莎，这两家是化妆品零售店，包含国内各大专柜品牌的产品，但是价格低很多。她们就像从商场专柜无数闪光灯下走入一排排货架。一直没舍得买的“神仙水”就被放在货架底排一个角落。店里人多拥挤，听口音大多数是大陆人来扫货。像雪肌精、契尔氏这些大牌水水也就2、3百港币，感觉以前买的都被坑了似的，真是冤大头。街上的女孩皮肤都很好，如果我在这遍地都是化妆品店，用雅思兰黛跟用妮维雅一样普及的地方，我皮肤不好才怪呢。除了化妆品，还有很多奢侈品，手表、箱包、首饰，有一家店门口排了很长的队还有工作人员维持秩序，是为了给顾客更好的服务限制了进店人数，你猜大家排着队给人家送钱的店是啥？————香奈儿。脑子都进水了，刷卡都不要钱啊。</p>
+<p><img src="/img/HK4.jpg" alt="化妆品"></p>
+<p>排队：</p>
+<p>这次经历了史上最长时间的排队，都想发誓再也不去人多的地方了。这悲惨的一天是在海洋公园度过的，早上出了地铁需要坐一趟巴士才能到海洋公园，沿着队走啊走啊都找不到队尾，快围了一大圈了，应该出门右转也许能近些。海洋公园里的热门项目均排队时间为2小时，这些都不说。天公不作美的是下午5点半准备出园的时候天降大雨。公园分为“高峰乐园”和“海滨乐园”两大主要景区，以登山缆车和海洋列车连接，上午我们坐缆车到“海滨乐园”，出园的时候需要回到”高峰乐园“，雨大缆车不能开放，只能排队坐海洋列车。我们在大雨里排了2个多小时，人挤人打伞也不管用，每个人的伞都挤得重叠，水顺着伞沿流到衣服里，只有内衣还算干的。7点半左右出园了，没想到搭巴士回去还要排很长的队，都快绝望了。</p>
+<p><img src="/img/HK5.jpg" alt="化妆品"></p>
+<p>这里面有一个细节，港人很多地方都主动排队，只有两三个人等巴士都会排队，这次队又长得看不到尾巴，就有很多插队的人，但是都被工作人员阻止，队里的人也会帮助维持秩序。有人插到我们的前面，工作人员劝说无效，我后面的哥们说“拉他出来，拉他出来，要去后面排队”。工作人员便拉他出来了，有些插队的人拉都拉不动，都在雨里淋了几个小时谁不想早点回家。然后在一个拐弯处我们这段队伍不知怎么搞得整个就插到前面去了，工作人员立即阻止但来不及了，只是阻止了很后面那一段。我后面那哥们不一样捡了个便宜嘛，怎么不见他说话了。</p>
+<p>好吧，啰嗦至此，香港还是他们的，我们只有大陆。</p>
+<p><img src="/img/HK6.jpg" alt="海洋公园"></p>
+<p><img src="/img/HK7.jpg" alt="迪士尼乐园"></p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>不想流水账一样写一篇攻略，如果有需要咨询的同学可以留言，必将知无不言，言无不尽。不想写”香港是自由与信念的国度“这样上纲上线的文章，只是就自己的所见发表一些所感。之前大Boss说我的视野有限，再不出去见识见识，就无法跟我交流了。我转了一圈回来了，恐怕也不能如他所愿感受到“外]]>
+    </summary>
+    
+      <category term="香港 攻略" scheme="http://yoursite.com/tags/%E9%A6%99%E6%B8%AF-%E6%94%BB%E7%95%A5/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[休假还是治疗？]]></title>
+    <link href="http://yoursite.com/2014/07/26/per-rest/"/>
+    <id>http://yoursite.com/2014/07/26/per-rest/</id>
+    <published>2014-07-25T16:04:40.000Z</published>
+    <updated>2014-09-26T16:19:22.000Z</updated>
+    <content type="html"><![CDATA[<p>在我正式休长假之前，有几周是双休的，为了缓和三年来的单休日子，让身体和心态从满负荷到倍轻松有一个缓冲。只是我有一个隐忧：周一正式开始工作的时候，总是需要1～2小时的“代入”，想一个很熟悉的CSS属性也慢了几秒钟。也许这是由休息进入工作状态避免不了的消耗。那休长假玩疯了之后如何开始工作？如何准备面试？认真地思考这个问题，是从我被电话面试问到我都面试过别人很多遍的必备技能时却语无伦次开始。我相信，我能回答的问题确实是我大脑深处印象最深的经历，不需要任何准备和“代入”便脱口而出，就像存储到大脑内存中一样。而我无法在任意时间内均可以解释清楚的问题是一遍又一遍备份到大脑硬盘中的，所以它不能像在内存中一样快速读取。</p>
+<p>我想说的重点是两个:</p>
+<blockquote>
+<ul>
+<li><p>这样的电话面试不公平。面试者是有所准备的，被面试者是处于任意状态下的。不得不说一个很励志的场景，在一节在线托福口语班上，老师把话筒给了一个愿意在1000人的倾听下回答问题的学生，话筒切换之后听到一个小baby用着哭腔不停地呼唤着“妈妈”，这位“妈妈”学生边小声安抚着baby、边说了近一分钟的英语。就是说，你无法知道对方所处的状态，试想，一个人怎么能快速从满脑子想着小孩的状态切换到前端技术交流，当然你想着别的事情也是这样的。所以最好电话面试也要预约时间，或者被面试者直接婉拒，稍作准备后再接受。</p>
+</li>
+<li><p>枕戈待旦。前端攻城师们真的要人如其名一样的枕戈待旦时刻准备攻城吗？我觉得最好是。我们在高中埋头苦海时家长说考上大学就轻松了，轻轻松松地上着大学然后就迎来了人山人海的就业大军，终于对工作可以轻松应对的时候发现囊中羞涩一平米也买不了。我们不再是相信考上大学就轻松的懵懂少年了，所以你最好也相信，休假不是只有玩，还要准备，时刻准备着。</p>
+</li>
+</ul>
+</blockquote>
+<p>最近迷上一部美剧《24小时》——放心，我没有在转移话题——每一季24集与现实时间同步地演绎24小时内发生的事情，每季间隔1～2年。主人公Jack Baver是一名反恐外勤人员，一名冷酷叛逆果断绝敢的冷血特工。每一季结束后他或者是被辞职过起寻常生活，或者是隐形埋名流浪天涯，或者是转去做文职，或者是被关进中国监狱，等到下一季他再出山，也完全是个身体素质极好枪法极准头脑极敏锐的特工。没有大腹便便没有身材发福没有技能退步，这真的是电视剧啊！</p>
+<p><strong>那么如何时刻准备着呢？为什么有些记忆近在内存，有些记忆远在硬盘呢？</strong></p>
+<p>借鉴一下我最近背单词的感悟，背单词有三种方法：</p>
+<blockquote>
+<ul>
+<li><p>重复记忆，这在我最开始学英语和日语时都得到了验证。初中英语老师要求每天写一篇16开纸的单词，写了三年。学日语一年之后为准备日语等级考试而背单词，每天按照记忆曲线重复背诵之前的内容，并开辟新的内容，大部分时间花费在重复以往上。小孩子学数数一定也是家长一遍又一遍地教才能数出来。这种方法试用于初学者，或者需要在有限时间内快速达到效果的时候。现在背托福词汇就是这样，每天花费1个小时快速浏览1200个单词。单词不是背出来的，是重复出来的。</p>
+</li>
+<li><p>词根词缀法，比如pre这个词缀是预先的意思，那么你很容易就能背诵preview、previous。我很少用这种方法，因为大部分词汇都是重复出来的，有一定的词汇量之后才总结出各个词缀的意义，然后类推其他的时候也没有很管用。就像汉字的偏旁部首一样，你认识了“日”，又通过象形法“日”下画一条地平线就成了“旦”意味着早晨。但当你看到“但”这个字时还是不知道什么意思。</p>
+</li>
+<li><p>联想记忆法，第一次学习／bus／这个单词时，你肯定在音标上写着／爸丝／这样的汉字，可能还有很多种／XX丝（死）／。将陌生的知识与已有经验经历建立对应关系，哪怕它们属于不同的知识体系，没有任何逻辑关系，只是方便记忆而已。</p>
+</li>
+</ul>
+</blockquote>
+<p><strong>那么如何能够在长期的非工作期间保持对前端知识和工作经验的快速反应？</strong></p>
+<p>首先是重复，利用长假时间定期将以往的总结文档、收藏文章浏览一遍。其次保持思考，我们都加入过几个技术交流QQ群、也订阅过几个技术分享公众平台，诚实地说，我只是看一眼他们在说什么，并没有仔细思考他们提出的问题。大脑的懒惰就像是一个天然的屏障，将你与真知隔绝。而重复记忆法恰恰给大脑的懒惰找了一个冠冕堂皇的接口，就像是在说“不思考没关系，多看几遍就可以了”。从这个意义上来说，重复是个笨方法，思考才是捷径。文艺地说，时间可以治愈一切，任何事物都有遗忘的过程，重复是必备技能，而思考可以减缓遗忘，使重复的周期更长一些。</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>在我正式休长假之前，有几周是双休的，为了缓和三年来的单休日子，让身体和心态从满负荷到倍轻松有一个缓冲。只是我有一个隐忧：周一正式开始工作的时候，总是需要1～2小时的“代入”，想一个很熟悉的CSS属性也慢了几秒钟。也许这是由休息进入工作状态避免不了的消耗。那休长假玩疯了之后如]]>
+    </summary>
+    
+      <category term="哲理 感悟" scheme="http://yoursite.com/tags/%E5%93%B2%E7%90%86-%E6%84%9F%E6%82%9F/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[雅虎科技频道纯图片布局的实现（下）]]></title>
+    <link href="http://yoursite.com/2014/06/30/web-yahootech2/"/>
+    <id>http://yoursite.com/2014/06/30/web-yahootech2/</id>
+    <published>2014-06-30T05:06:38.000Z</published>
+    <updated>2014-09-29T06:19:04.000Z</updated>
+    <content type="html"><![CDATA[<p><img src="/img/yahooTech1.jpg" alt="雅虎科技"></p>
+<p>上一篇主要从外观上介绍了YahooTech的布局方式，本篇着重代码实现。代码实现经历了两个版本，以下是V1.0的算法：</p>
+<p>1、 每张图片的宽度都设置为百分比，当屏幕resize时不需要额外处理。<br>2、 受启发于媒体查询根据屏幕宽度设置多种区间匹配样式，故设置0~320、320~1024、1024～1600、1600~+∞四个区间。</p>
+<p>0~320：手机设备，每行只显示一个</p>
+<p>320~1024：平板设备，每行显示二个或三个。第一个宽度为30~60%，第二个宽度为20~30%，或是当第一个宽度大于50%时，第二个占满该行。否则第三个占满该行。</p>
+<p>1024~1600：桌面，每行显示三个或四个，类似上面的随机取值。</p>
+<p>1600~+∞：超大宽屏，每行显示width/400张图片，每张图片宽度为350~450的随机值。</p>
+<p>3、根据每张图片的实际宽高和显示宽度百分比计算其显示高度，并在当前行布局完成时取得当前行所有图片的最小显示高度作为当前行的显示高度。</p>
+<pre><code>insertItem : <span class="function"><span class="keyword">function</span><span class="params">(item)</span>
+{</span>
+    <span class="keyword">var</span> divItem = $(item);
+    <span class="keyword">var</span> randomWidth = <span class="number">0</span>;
+    <span class="comment">//手机端每行只显示一个</span>
+    <span class="keyword">if</span>(G_layout_options.clientW &lt;= <span class="number">320</span>){
+        randomWidth = <span class="number">100</span>;
+        <span class="keyword">this</span>.isFullROW = <span class="literal">true</span>;
+        <span class="keyword">this</span>.fullNum = <span class="number">1</span>;
+    }
+    <span class="comment">//pad端每行显示二个或三个</span>
+    <span class="keyword">else</span> <span class="keyword">if</span>(G_layout_options.clientW &lt;= <span class="number">1024</span>){
+        <span class="keyword">if</span>(<span class="keyword">this</span>.itemsWidth.length == <span class="number">0</span>){
+            randomWidth = <span class="built_in">Math</span>.random() * (<span class="number">60</span> - <span class="number">30</span>) + <span class="number">30</span>;
+        }
+        <span class="keyword">else</span> <span class="keyword">if</span>(<span class="keyword">this</span>.itemsWidth.length == <span class="number">1</span>){
+            <span class="keyword">if</span>(<span class="built_in">parseInt</span>(<span class="keyword">this</span>.itemsWidth[<span class="number">0</span>]) &lt; <span class="number">50</span>){
+                randomWidth = <span class="built_in">Math</span>.random() * (<span class="number">30</span> - <span class="number">20</span>) + <span class="number">20</span>;
+            }
+            <span class="keyword">else</span>{
+                randomWidth = <span class="number">100</span> - <span class="keyword">this</span>.itemsWidth[<span class="number">0</span>];
+                <span class="keyword">this</span>.isFullROW = <span class="literal">true</span>;
+                <span class="keyword">this</span>.fullNum = <span class="number">2</span>;
+            }
+        }
+        <span class="keyword">else</span> <span class="keyword">if</span>(<span class="keyword">this</span>.itemsWidth.length == <span class="number">2</span>){
+            randomWidth = <span class="number">100</span> - <span class="keyword">this</span>.itemsWidth[<span class="number">0</span>] - <span class="keyword">this</span>.itemsWidth[<span class="number">1</span>];
+            <span class="keyword">this</span>.isFullROW = <span class="literal">true</span>;
+            <span class="keyword">this</span>.fullNum = <span class="number">3</span>;
+        }
+    }
+    <span class="comment">//desktop显示三个或四个</span>
+    <span class="keyword">else</span> <span class="keyword">if</span>(G_layout_options.clientW &lt;= <span class="number">1600</span>){
+        <span class="keyword">if</span>(<span class="keyword">this</span>.itemsWidth.length == <span class="number">0</span>){
+            randomWidth = <span class="built_in">Math</span>.random() * (<span class="number">40</span> - <span class="number">20</span>) + <span class="number">20</span>;
+        }
+        <span class="keyword">else</span> <span class="keyword">if</span>(<span class="keyword">this</span>.itemsWidth.length == <span class="number">1</span>){
+            <span class="keyword">if</span>(<span class="built_in">parseInt</span>(<span class="keyword">this</span>.itemsWidth[<span class="number">0</span>]) &lt; <span class="number">30</span>){
+                randomWidth = <span class="built_in">Math</span>.random() * (<span class="number">30</span> - <span class="number">20</span>) + <span class="number">20</span>;
+            }
+            <span class="keyword">else</span>{
+                randomWidth = <span class="built_in">Math</span>.random() * (<span class="number">40</span> - <span class="number">30</span>) + <span class="number">30</span>;
+            }
+        }
+        <span class="keyword">else</span> <span class="keyword">if</span>(<span class="keyword">this</span>.itemsWidth.length == <span class="number">2</span>){
+            <span class="keyword">if</span>(<span class="built_in">parseInt</span>(<span class="keyword">this</span>.itemsWidth[<span class="number">0</span>] + <span class="keyword">this</span>.itemsWidth[<span class="number">1</span>]) &lt; <span class="number">60</span>){
+                randomWidth = <span class="built_in">Math</span>.random() * (<span class="number">30</span> - <span class="number">20</span>) + <span class="number">20</span>;
+            }
+            <span class="keyword">else</span>{
+                randomWidth = <span class="number">100</span> - <span class="keyword">this</span>.itemsWidth[<span class="number">0</span>] - <span class="keyword">this</span>.itemsWidth[<span class="number">1</span>];
+                <span class="keyword">this</span>.isFullROW = <span class="literal">true</span>;
+                <span class="keyword">this</span>.fullNum = <span class="number">3</span>;
+            }
+        }
+        <span class="keyword">else</span> <span class="keyword">if</span>(<span class="keyword">this</span>.itemsWidth.length == <span class="number">3</span>){
+            randomWidth = <span class="number">100</span> - <span class="keyword">this</span>.itemsWidth[<span class="number">0</span>] - <span class="keyword">this</span>.itemsWidth[<span class="number">1</span>] - <span class="keyword">this</span>.itemsWidth[<span class="number">2</span>];
+            <span class="keyword">this</span>.isFullROW = <span class="literal">true</span>;
+            <span class="keyword">this</span>.fullNum = <span class="number">4</span>;
+        }
+    }
+    <span class="comment">//超大屏</span>
+    <span class="keyword">else</span>{
+        <span class="keyword">this</span>.fullNum = <span class="built_in">parseInt</span>(G_layout_options.contentW / <span class="number">400</span>);
+        <span class="keyword">if</span>(<span class="keyword">this</span>.itemsWidth.length &lt; <span class="keyword">this</span>.fullNum - <span class="number">1</span>){
+            randomWidth = (<span class="built_in">Math</span>.random() * (<span class="number">450</span> - <span class="number">350</span>) + <span class="number">350</span>) / G_layout_options.contentW * <span class="number">100</span>;
+        }
+        <span class="keyword">else</span>{
+            <span class="keyword">var</span> itemsWidthSumTmp = <span class="number">0</span>;
+            <span class="keyword">for</span>(<span class="keyword">var</span> i = <span class="number">0</span>; i &lt; <span class="keyword">this</span>.itemsWidth.length; i++){
+                itemsWidthSumTmp += <span class="keyword">this</span>.itemsWidth[i];
+            }
+            randomWidth = <span class="number">100</span> - itemsWidthSumTmp;
+            <span class="keyword">this</span>.isFullROW = <span class="literal">true</span>;
+        }
+    }
+    <span class="keyword">this</span>.itemsWidth.push(randomWidth);
+    divItem.css(<span class="string">"width"</span>, randomWidth + <span class="string">"%"</span>);
+    <span class="keyword">var</span> that = <span class="keyword">this</span>;
+    divItem.appendTo(<span class="keyword">this</span>.element);
+    <span class="keyword">this</span>.calcuRowHeight(divItem, randomWidth);
+},
+
+calcuRowHeight: <span class="function"><span class="keyword">function</span><span class="params">(divItem, randomWidth)</span>{</span>
+        <span class="keyword">var</span> renderHeight = <span class="built_in">parseFloat</span>(divItem.find(<span class="string">"img"</span>).attr(<span class="string">"data-height"</span>)) * (randomWidth * (G_layout_options.contentW - <span class="number">20</span>) - <span class="number">1000</span>) / (<span class="built_in">parseFloat</span>(divItem.find(<span class="string">"img"</span>).attr(<span class="string">"data-width"</span>)) * <span class="number">100</span>);
+        <span class="keyword">this</span>.itemsHeight.push(renderHeight);
+        <span class="keyword">if</span>(<span class="keyword">this</span>.isFullROW &amp;&amp; <span class="keyword">this</span>.itemsHeight.length == <span class="keyword">this</span>.fullNum){
+            <span class="comment">//console.log(this.itemsHeight);</span>
+            <span class="keyword">var</span> minHeight = <span class="built_in">Math</span>.min.apply(<span class="built_in">Math</span>,<span class="keyword">this</span>.itemsHeight);
+            <span class="keyword">this</span>.element.css({<span class="string">"height"</span>:minHeight &gt; <span class="number">500</span>? <span class="number">500</span>:minHeight});
+            <span class="comment">//每行显示两个时重新取bigger类型图片</span>
+            <span class="keyword">if</span>(<span class="keyword">this</span>.fullNum == <span class="number">2</span>){
+                <span class="keyword">this</span>.element.find(<span class="string">".content-img"</span>).each(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+                    $(<span class="keyword">this</span>).attr(<span class="string">"src"</span>,$(<span class="keyword">this</span>).attr(<span class="string">"src"</span>).replace(<span class="string">"common"</span>,<span class="string">"bigger"</span>));
+                })
+            }
+
+        }
+    }
+</code></pre><p>显示效果如下图：</p>
+<p><img src="/img/yahooTech3.jpg" alt="立方媒体"></p>
+<p>其实这个算法很low，基本上就是一些随机值凑数，被吐槽都是卡卡西风格，这种不顾图片实际宽高而采用随机宽度的做法太不接地气，效果也不好。于是v2.0采用了新的解决方案：</p>
+<p>1、 遍历待排列的数据块Blocks，取得一个availableRow，可能是新的一行，也可能是未满行，将当前数据块Block试插入此行。<br>2、 所谓试插入，就是计算新数据插入后的当前行宽度是否超出最大宽度，超出也没有关系，顺势按比例压缩计算试插入的行高。attempHeight = MaxWith/Sum(width/height)。此时设置一个高度边界值300，当行高小于300时影响效果，故试插入失败。其余情况皆为成功。<br>3、 试插入失败意味着当前行剩余空间过小，不适合再插入数据，故创建新行，新行变成了当前行。<br>4、 执行DOM插入操作。<br>5、 重新计算行高，并以此设置图片显示宽高，如果当前图片宽度与需要显示的宽度不符，为避免图片拉伸影响效果可重新获取对应尺寸的图片URL。排列完成后显示当前行。</p>
+<p>在此方案中图片宽度使用固定值不再使用百分比，能够更大限度地因图制宜。只是窗口resize时需要重排。最大的亮点是行高的计算的方法：attempHeight = MaxWith/Sum(width/height)，真的是很简单的四则运算提供了一个很大的突破口。</p>
+<pre><code>showBlocks : <span class="function"><span class="keyword">function</span><span class="params">(items)</span>
+{</span>   
+    <span class="keyword">for</span>(<span class="keyword">var</span> i = <span class="number">0</span>; i &lt; items.length; i++)
+    {
+        <span class="keyword">var</span> block = items[i];
+        <span class="keyword">var</span> row = <span class="keyword">this</span>.getAvailableRow();
+        <span class="keyword">var</span> rowIndex = row.getRowIndex();
+        <span class="keyword">if</span>(!row.attemptInsertBlock(block)){
+            row = <span class="keyword">this</span>.createNewRow();
+        };
+        row.insertBlock(block);
+    }
+},
+
+getAvailableRow : <span class="function"><span class="keyword">function</span><span class="params">()</span>
+    {</span>
+        <span class="keyword">var</span> lastRow = <span class="keyword">this</span>.getLastRow();
+        <span class="keyword">if</span>(lastRow == <span class="literal">null</span>)
+            lastRow = <span class="keyword">this</span>.createNewRow();
+        <span class="keyword">else</span>
+        {
+            <span class="keyword">var</span> enough = lastRow.checkFullRow();
+            <span class="keyword">if</span>(enough){
+                lastRow = <span class="keyword">this</span>.createNewRow();
+            }
+        }
+        <span class="keyword">return</span> lastRow;
+    },
+
+attemptInsertBlock : <span class="function"><span class="keyword">function</span><span class="params">(block)</span>
+    {</span>   
+        <span class="comment">//边界测试</span>
+        <span class="keyword">if</span>(<span class="keyword">this</span>.rowWidth + block.width - <span class="number">10</span> &gt; G_layout_options.contentW){
+            <span class="keyword">this</span>.rowWidth = G_layout_options.contentW;
+            <span class="keyword">this</span>.attempHeight = (G_layout_options.contentW - (<span class="keyword">this</span>.blockWidths.length + <span class="number">1</span>) * <span class="number">10</span> ) / (<span class="keyword">this</span>.rowRadio + block.aspectRadio);
+            <span class="keyword">if</span>(<span class="keyword">this</span>.attempHeight &lt; <span class="number">300</span>){
+                <span class="keyword">this</span>.layoutBlock();
+                <span class="keyword">return</span> <span class="literal">false</span>;
+            }
+            <span class="keyword">return</span> <span class="literal">true</span>;
+        }
+        <span class="keyword">return</span> <span class="literal">true</span>;
+    },
+
+insertBlock : <span class="function"><span class="keyword">function</span><span class="params">(block)</span>
+    {</span>
+        <span class="comment">//更新视图</span>
+        <span class="keyword">this</span>.element.append(block.element);
+        <span class="comment">//更新Model</span>
+        <span class="keyword">this</span>.blocks.push(block);
+        <span class="keyword">this</span>.attempHeight = <span class="keyword">this</span>.attempHeight == <span class="number">0</span>? block.height : <span class="keyword">this</span>.attempHeight;
+        <span class="keyword">this</span>.rowWidth += block.width + <span class="number">10</span>;
+        <span class="keyword">this</span>.rowRadio += block.aspectRadio;
+        <span class="keyword">this</span>.blockWidths.push(block.width);
+        <span class="keyword">this</span>.blockHeights.push(block.height);
+        <span class="comment">//边界测试</span>
+        <span class="keyword">if</span>(<span class="keyword">this</span>.rowWidth - <span class="number">10</span> &gt; G_layout_options.contentW){
+            <span class="keyword">this</span>.layoutBlock();
+        }
+    },
+
+layoutBlock : <span class="function"><span class="keyword">function</span><span class="params">()</span>
+{</span>   
+    <span class="keyword">this</span>.rowWidth = G_layout_options.contentW;
+    <span class="keyword">this</span>.attempHeight = (G_layout_options.contentW - <span class="keyword">this</span>.blockWidths.length * <span class="number">10</span> ) / <span class="keyword">this</span>.rowRadio;
+    <span class="comment">//设置行高</span>
+    <span class="keyword">this</span>.element.css({<span class="string">"height"</span>:<span class="keyword">this</span>.attempHeight});
+    <span class="keyword">for</span>(<span class="keyword">var</span> i = <span class="number">0</span>; i &lt; <span class="keyword">this</span>.blocks.length; i++){
+        <span class="comment">//更新Model</span>
+        <span class="keyword">var</span> _block = <span class="keyword">this</span>.blocks[i];
+        _block.setContainer(<span class="keyword">this</span>);
+        _block.height = <span class="keyword">this</span>.attempHeight;
+        _block.width = _block.aspectRadio * <span class="keyword">this</span>.attempHeight;
+        <span class="keyword">if</span>(_block.width &gt; <span class="number">400</span>){
+            _block.fetchImage = <span class="literal">true</span>;
+            _block.src= _block.src.replace(<span class="string">"common"</span>,<span class="string">"bigger"</span>);
+        }
+        <span class="comment">//更新视图</span>
+        _block.element.find(<span class="string">"img"</span>).attr(<span class="string">"width"</span>,_block.width);
+        _block.element.find(<span class="string">"img"</span>).attr(<span class="string">"height"</span>,_block.height);
+        <span class="keyword">if</span>(_block.fetchImage){
+            _block.element.find(<span class="string">"img"</span>).attr(<span class="string">"src"</span>,_block.src);
+        }
+    }
+    <span class="keyword">this</span>.isFullROW = <span class="literal">true</span>;
+    <span class="comment">//显示当前行</span>
+    <span class="keyword">this</span>.show();
+},
+</code></pre><p>效果图如下：</p>
+<p><img src="/img/yahooTech4.jpg" alt="立方媒体"></p>
+<p>有没有觉得顿时高大上了很多，完整效果请移步：<a href="http://www.l99.com/media/sex" title="立方媒体" target="blank">http://www.l99.com/media/sex</a></p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p><img src="/img/yahooTech1.jpg" alt="雅虎科技"></p>
+<p>上一篇主要从外观上介绍了YahooTech的布局方式，本篇着重代码实现。代码实现经历了两个版本，以下是V1.0的算法：</p>
+<p>1、 每张图片的宽度都设置为百分比，当屏]]>
+    </summary>
+    
+      <category term="YahooTech 雅虎科技 纯图片 横向瀑布流" scheme="http://yoursite.com/tags/YahooTech-%E9%9B%85%E8%99%8E%E7%A7%91%E6%8A%80-%E7%BA%AF%E5%9B%BE%E7%89%87-%E6%A8%AA%E5%90%91%E7%80%91%E5%B8%83%E6%B5%81/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[鸡血三年 累觉不爱]]></title>
+    <link href="http://yoursite.com/2014/06/26/per-resign/"/>
+    <id>http://yoursite.com/2014/06/26/per-resign/</id>
+    <published>2014-06-26T05:40:12.000Z</published>
+    <updated>2014-09-29T06:37:40.000Z</updated>
+    <content type="html"><![CDATA[<p>猛然间一抬眼，眼睛虚幻得看不清程哥的脸，才意识到自己应该休息，盯着屏幕太久了；<br>目不转睛思索问题，突然左耳一阵嗡响，才意识到自己应该休息，集中精力太久了；<br>纠结于一个文件的命名或是代码结构不够优雅，论坛上在讨论velocity、underscore、方案选型等千奇百怪的问题，才意识到自己应该休息，归零来看看更广阔的世界；</p>
+<p>3年前，为自己从一成不变矮挫丑的软件界面转移到五彩斑斓酷炫拽的web前端而兴奋不已，那种兴奋能让你听一次便记住一个色值、书本上的知识一下子就找到了用武之地，一个F12就能清清楚楚地看到代码的来龙去脉，透明没有伪装。但那时写代码就像滑冰，说不定哪一脚不稳就摔了个底朝天，上线前总会把改过的代码都过一遍，可能出现的问题和解决方法都实验一遍，不能做到百分百无bug也要能尽快修复。真的，每一步都可能摔倒，每一句代码都可能出错。</p>
+<p>如果不是眼下前端小妹的代码上线后出现问题导致部分恢复的事情，我已经忘记了当初的如履薄冰。现在骄傲到不指望QA的测试，上线出现问题也义正言辞地说不是代码级别的问题，为了实现类YahooTech的纯图片展示方式，断断续续研究了一个星期YahooTech混淆后的代码（你研究过就知道，那不是人看的），在终于要大功告成的时候窗口resize layout出现问题，花费半个小时用一行代码搞定。一行代码能成事，也能坏事。</p>
+<p>哪怕受苦于IE6的折磨都当成一种特别的经历。它像一个黑匣子让你东奔西突，当你煞费苦心花费个把小时终于解决一个IE6的兼容性问题时，无比激动。长此以往便渐渐了解她的脾气秉性，很快写出取悦于她的代码。只是后来，甚是自豪的同时又莫名的惆怅，就像被潜规则之后而上位一样，何苦花大把的时候来适应一个潜规则，却还因此而沾沾自喜。</p>
+<p>这三年是我用力工作的三年，什么房子车子票子都抛之脑后，只是享受于午夜更新前灯火通明的办公室里一群打了鸡血的同事，更新后和同事走几公里夜路找出租车。这种无忧无虑又百转千回给了我机遇挑战和自我实现的价值，哪怕最后只收拾一包离开这奉献三年的地方。说着说着有些难受，不舍，就像我们总期盼周杰伦和蔡依林在一起、林志颖娶了林心如该多好实际上是怀念我们自己的初恋一样，我不舍的更是自己一心一意奋斗的青春。</p>
+<p>眼下，有点累，什么都不想做，就这么呆着。</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>猛然间一抬眼，眼睛虚幻得看不清程哥的脸，才意识到自己应该休息，盯着屏幕太久了；<br>目不转睛思索问题，突然左耳一阵嗡响，才意识到自己应该休息，集中精力太久了；<br>纠结于一个文件的命名或是代码结构不够优雅，论坛上在讨论velocity、underscore、方案选型等千]]>
+    </summary>
+    
+      <category term="立方网 前端 思考" scheme="http://yoursite.com/tags/%E7%AB%8B%E6%96%B9%E7%BD%91-%E5%89%8D%E7%AB%AF-%E6%80%9D%E8%80%83/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[网页头部向下滚动隐藏向上滚动显示]]></title>
+    <link href="http://yoursite.com/2014/05/29/web-header/"/>
+    <id>http://yoursite.com/2014/05/29/web-header/</id>
+    <published>2014-05-29T05:45:56.000Z</published>
+    <updated>2014-09-27T05:51:18.000Z</updated>
+    <content type="html"><![CDATA[<p>这种效果在原生APP中处处可见。向下滚动时意味着用户在寻求更多的内容，同时手机端可视区域有限，故将头部隐藏以展示更多的内容真是一件体验美好的事；向上滚动时，用户可能在寻找其他操作，故显示头部。这本身也是响应式设计的体现。今天，我们尝试把这种效果迁移到web端。</p>
+<p><strong>首先、头部固定</strong></p>
+<pre><code><span class="tag">body</span> {
+  <span class="attribute">padding-top</span><span class="value">: <span class="number">80</span>px;</span> <span class="comment">// 头部高度固定时CSS中设置</span>
+}
+<span class="tag">header</span> {
+  <span class="attribute">background</span><span class="value">:  <span class="hexcolor">#062D52</span>;</span>
+  <span class="attribute">position</span><span class="value">: fixed;</span>
+  <span class="attribute">top</span><span class="value">: <span class="number">0</span>;</span>
+  <span class="attribute">transition</span><span class="value">: top <span class="number">0.2</span>s ease-in-out;</span>
+  <span class="attribute">width</span><span class="value">: <span class="number">100</span>%;</span>
+  <span class="attribute">box-shadow</span><span class="value">: <span class="number">0</span> <span class="number">3</span>px <span class="number">3</span>px <span class="number">0</span> rgba(<span class="number">6</span>, <span class="number">45</span>, <span class="number">82</span>, <span class="number">0.5</span>);</span> 
+  <span class="attribute">z-index</span><span class="value">: <span class="number">999</span>;</span>
+}
+<span class="class">.nav-up</span> {
+  <span class="attribute">top</span><span class="value">: -<span class="number">80</span>px;</span> <span class="comment">//头部高度固定时CSS中设置. </span>
+}
+</code></pre><p><strong>其次、滚动事件</strong></p>
+<pre><code><span class="keyword">var</span> $header = $(<span class="string">"header"</span>);
+<span class="keyword">var</span> headerHeight =  $header.height();
+<span class="keyword">var</span> lastScrollTop = <span class="number">0</span>;
+<span class="keyword">var</span> delta = <span class="number">5</span>;
+<span class="keyword">var</span> didScroll;
+<span class="comment">//$("body").css({"padding-top": headerHeight});头部高度不固定时JS中设置</span>
+$(window).scroll(<span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+    didScroll = <span class="literal">true</span>;
+})
+setInterval(<span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+    <span class="keyword">if</span> (didScroll) {
+        scrollHeaderStickyEvent();
+        didScroll = <span class="literal">false</span>;
+    }
+}, <span class="number">250</span>);
+
+<span class="function"><span class="keyword">function</span> <span class="title">scrollHeaderStickyEvent</span><span class="params">()</span>{</span>
+    <span class="keyword">var</span> st = $(<span class="keyword">this</span>).scrollTop();
+    <span class="comment">// 滚动距离过小，未达到最小间距时不处理。</span>
+    <span class="keyword">if</span>(<span class="built_in">Math</span>.abs(lastScrollTop - st) &lt;= delta){
+        <span class="keyword">return</span>;
+    }
+    <span class="comment">// 向下滚动超过header部分时增加样式nav-up以隐藏header部分.</span>
+    <span class="keyword">if</span> (st &gt; lastScrollTop &amp;&amp; st &gt; headerHeight){
+        <span class="comment">// 向下滚动</span>
+    $header.addClass(<span class="string">"nav-up"</span>);
+    <span class="comment">//$header.css({"top": "-" + headerHeight + "px"}); 高度动态设置   </span>
+    } <span class="keyword">else</span> {
+        <span class="comment">// 向上滚动</span>
+        <span class="keyword">if</span>(st + $(window).height() &lt; $(document).height()) {
+            $header.removeClass(<span class="string">"nav-up"</span>);
+                <span class="comment">//$header.css({"top": 0}); 高度动态设置</span>
+        }
+    }
+    lastScrollTop = st;
+}
+</code></pre><p>如此使用250ms的定时器来检测是否在scroll过程中的方式我是第一次使用，而且与我的思考方向正好相反。没有想通它在性能上有什么优势，传统的做法如下：</p>
+<pre><code><span class="keyword">var</span> $header = $(<span class="string">"header"</span>);
+    <span class="keyword">var</span> headerHeight =  $header.height();
+    <span class="keyword">var</span> lastScrollTop = <span class="number">0</span>;
+    <span class="keyword">var</span> stickyTimer = <span class="literal">null</span>;
+    <span class="keyword">var</span> delta = <span class="number">5</span>;
+    <span class="keyword">var</span> didScroll;
+    <span class="comment">//$("body").css({"padding-top": headerHeight});头部高度不固定时JS中设置</span>
+    $(window).scroll(<span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+        <span class="keyword">if</span>(stickyTimer != <span class="literal">null</span>){
+            clearTimeout(stickyTimer);
+            stickyTimer = setTimeout(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+                scrollHeaderStickyEvent();
+            },<span class="number">250</span>)
+        }
+        <span class="keyword">else</span>{
+            stickyTimer = setTimeout(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+                scrollHeaderStickyEvent();
+            },<span class="number">250</span>)
+        }
+    }
+    <span class="function"><span class="keyword">function</span> <span class="title">scrollHeaderStickyEvent</span><span class="params">()</span>{</span>
+        <span class="comment">//同上…….</span>
+    }
+</code></pre><p>参考资料：<a href="https://medium.com/design-startups/67bbaae9a78c" target="_blank" rel="external">https://medium.com/design-startups/67bbaae9a78c</a></p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>这种效果在原生APP中处处可见。向下滚动时意味着用户在寻求更多的内容，同时手机端可视区域有限，故将头部隐藏以展示更多的内容真是一件体验美好的事；向上滚动时，用户可能在寻找其他操作，故显示头部。这本身也是响应式设计的体现。今天，我们尝试把这种效果迁移到web端。</p>
+<p]]>
+    </summary>
+    
+      <category term="向上滚动 向下滚动" scheme="http://yoursite.com/tags/%E5%90%91%E4%B8%8A%E6%BB%9A%E5%8A%A8-%E5%90%91%E4%B8%8B%E6%BB%9A%E5%8A%A8/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[雅虎科技频道纯图片布局的实现（上）]]></title>
+    <link href="http://yoursite.com/2014/05/14/web-yahootech1/"/>
+    <id>http://yoursite.com/2014/05/14/web-yahootech1/</id>
+    <published>2014-05-13T16:25:12.000Z</published>
+    <updated>2014-09-29T06:18:19.000Z</updated>
+    <content type="html"><![CDATA[<p>题外话：希望有一天做东西不再用“仿”这个字。<br>首次看到<a href="https://www.yahoo.com/tech" title="yahooTech" target="blank">雅虎科技</a>的页面，我想到的是这几个词，全屏、大胆、横向瀑布流、随机、没什么大不了的。仔细研究了一下它的页面布局之后，发现了几个细节：</p>
+<ol>
+<li><p>每行显示的图片数量和布局是否有规律？</p>
+<p> 取样了近200条数据，无明显规律。但是大概可以推断一些边界值。如每行显示2张、3张（并列3张、左1右2）、5张（左2中2右1）、6张（左1上三下二），但不限于此。图片宽度范围为300px~1000px，高度范围为260px~620px。每个区块均绝对定位，动态设置宽高和位置。Pinterest的瀑布流很早就使用这种方式定位，对页面元素的控制性更好，而我们更习惯于浮动定位。</p>
+<p> 举个形象的故事，就像组织同学们排队，小红你站在（25,25）这个点上，小绿你站在（25+10,25）这个点上，这是绝对定位；同学们按照学号依次排列，中间间隔10cm，这是浮动。浮动不用计算每个人的位置，实现简单，但是常出现一种现象：就是后面的人一拥而上看似排好了但肯定还会陆续往后退。这种体验不好，除非明确每个人的三围，站好了就不要乱动。</p>
+<p> 于是，我让她们每个人回家量三围，排队前都贴到衣服后面（等同于让后端获取图片宽高写入html），这样后面的同学会主动预留位置。但是还是有好些同学没有完成任务，忘记啦，家里没有尺子啦，确实量不出来啊等等。我就无语了，先排队吧。小红学号在前面，先入队站好后现场量三围，发现胖了就把后面的同学往后挤挤。小绿学号在后面，还没轮到她的时候她就量好了。所以她就不影响。</p>
+<p> 但这影响了我们的班级形象啊，排个队都拖拖拉拉的。小红说，我们家就是没有钱买尺子啊。。。（后端同学说无法取得图片尺寸，鬼才信呢）我只好决定，没有三围的同学不再入列。话扯得有点远了，拉回来。上述的边界值是2014年4月13日统计的，现在布局有些许变化，向着可视区域内图片数量增加的方向改进。</p>
+</li>
+<li><p>无论如何改变屏幕大小，图片清晰依旧。</p>
+<p> 响应式设计中，这种按需要尺寸加载图片的技术必然会普及，那Yahoo对每张图片都提供了那些尺寸呢？经调查，图片宽度从200px-1000px，每隔50／100提供一种尺寸。200、250、300、350、400、450、500、550、600、700、800、900、1000。（试着读一下这些数据，有没有想起《卖拐》里的情景）1000px的图片文件大小得多大啊？！随便看了一张88.4K，只有全屏的背景图我才舍得用100K左右的图片，人家不差网速呀。</p>
+</li>
+<li><p>图片上的文字遮罩</p>
+<p> 图片上显示文字为了显示清晰，常用的解决方案就是给文字增加一层遮罩。这种遮罩过于明显很不美观，而Yahoo使用的是根据图片的主色使用渐变白或渐变黑遮罩，正好与图片很好地融合到一起。</p>
+</li>
+</ol>
+<p>对比看一下YahooTech和两性（床上）版块的实现效果。</p>
+<p><img src="/img/yahooTech1.jpg" alt="雅虎科技"></p>
+<p><img src="/img/yahooTech2.png" alt="立方媒体"></p>
+<p>实现上主要有三个类，简要分析一下代码：</p>
+<pre><code><span class="comment">//Manager类，管理Row和DataPool</span>
+Class(<span class="string">"RowManager"</span>, com.lifeix.event.Listener, {
+    instance : <span class="literal">null</span>,  <span class="comment">//单例</span>
+    constructor : <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>},
+    <span class="comment">//调用入口，从缓冲池DataPool中获取数据传递给showBlocks()</span>
+    showMoreBlocks : <span class="function"><span class="keyword">function</span><span class="params">(requiredCount)</span>{</span>}
+    <span class="comment">//遍历数据，逐个插入到当前行</span>
+    showBlocks : <span class="function"><span class="keyword">function</span><span class="params">(items)</span>{</span>}
+    <span class="comment">//获取当前Row，如果当前行数据已满则新建Row</span>
+    getAvailableRow: <span class="function"><span class="keyword">function</span><span class="params">(items)</span>{</span>}
+    <span class="comment">//新建Row</span>
+    createNewRow: <span class="function"><span class="keyword">function</span><span class="params">(items)</span>{</span>}
+    ……
+}
+
+<span class="comment">//Row类，实现行的基本操作</span>
+Class(<span class="string">"Row"</span>, com.lifeix.event.Listener, {
+    constructor : <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>},
+    <span class="comment">//新建一行append到页面中</span>
+    init: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>}
+    <span class="comment">//每行显示二条或三条数据，逐条append到页面中。</span>
+    insertItem: <span class="function"><span class="keyword">function</span><span class="params">(items)</span>{</span>}
+    <span class="comment">//当前行数据已满时设置，根据图片宽高计算行高。</span>
+    calcuRowHeight: <span class="function"><span class="keyword">function</span><span class="params">(items)</span>{</span>}
+    ……
+}
+
+<span class="comment">//DataPool类，实现缓冲池的基本操作</span>
+Class(<span class="string">"DataPool"</span>, com.lifeix.event.Listener, {
+    instance : <span class="literal">null</span>, <span class="comment">//单例</span>
+    constructor : <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>},
+    <span class="comment">//将初始化得到的和ajax后续加载的数据均存储到缓冲池DataPool中。</span>
+    refresh: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>}
+    <span class="comment">//发送ajax请求入口，过滤重复请求。</span>
+    _loadMore: <span class="function"><span class="keyword">function</span><span class="params">(items)</span>{</span>}
+    <span class="comment">//发送ajax请求核心方法，请求后的数据存储到缓冲池DataPool中</span>
+    _sendAjaxRequest: <span class="function"><span class="keyword">function</span><span class="params">(items)</span>{</span>}
+    <span class="comment">//从缓冲池DataPool中获取指定数量的数据</span>
+    getTopItems: <span class="function"><span class="keyword">function</span><span class="params">(num)</span>{</span>}
+    ……
+}
+</code></pre>]]></content>
+    <summary type="html">
+    <![CDATA[<p>题外话：希望有一天做东西不再用“仿”这个字。<br>首次看到<a href="https://www.yahoo.com/tech" title="yahooTech" target="blank">雅虎科技</a>的页面，我想到的是这几个词，全屏、大胆、横向瀑布流、随机、]]>
+    </summary>
+    
+      <category term="YahooTech 雅虎科技 纯图片 横向瀑布流" scheme="http://yoursite.com/tags/YahooTech-%E9%9B%85%E8%99%8E%E7%A7%91%E6%8A%80-%E7%BA%AF%E5%9B%BE%E7%89%87-%E6%A8%AA%E5%90%91%E7%80%91%E5%B8%83%E6%B5%81/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[HTML5移动开发中菜单如何左右折叠]]></title>
+    <link href="http://yoursite.com/2014/03/29/h5-collapse/"/>
+    <id>http://yoursite.com/2014/03/29/h5-collapse/</id>
+    <published>2014-03-29T05:02:33.000Z</published>
+    <updated>2014-09-29T12:07:03.000Z</updated>
+    <content type="html"><![CDATA[<p>最近的工作都转移到移动开发中，针对主站www.l99.com开发一套移动端版本，像之前写的《webapp立方没体诞生之初》、《单页应用中页面转场的实现》都是针对此项目。</p>
+<p>借此谈谈对原生APP和HTML5 WEBAPP的看法，关于各有千秋、根据项目需求的说法谁都会说，不能否认的是，HTML5在一段时间内无法与原生APP抗衡，在用户体验、速度、流量上都只能望其项背。但其表现出来的优势也越来越显著，无需审核、无需安装、跨平台（不需开发iphone和android两中版本）。在之前的PC时代，不也是安装各种管理信息系统、杀毒软件、音乐播放工具、输入法等等，而现在越来越倾向于访问网站、在线收听、云服务。这是一个趋势，但是需要多长时间达到成熟的状态还未可知。毕竟Facebook在2012年期间舍弃原本实行的HTML5架构，转而打造原生APP。不过，你可以看到这个趋势的推进，ios7的safari增加了隐藏地址栏和底部导航的功能，使WEBAPP拥有了与原生APP同样的空间。</p>
+<p>从开发角度来看，webapp和浏览器依然扮演着同PC端相同的角色，一个负责布局样式功能的代码实现，一个负责解析渲染和交互，这些都只停留在单个页面内，一个url访问一个页面，点击链接跳转到另一页面。而对于页面间的布局和转场还鲜有涉及，没有系统或浏览器接口可供调用。要想达到原生app的体验效果，需要类似一种中间层的解决方案。其实这应该是HTML5持续推进的方向，它增加了<code>&lt;section</code>&gt;<code>&lt;article</code>&gt;<code>&lt;video</code>&gt;<code>&lt;audio</code>&gt;等各种语义化的标签，为什么没有增加<code>&lt;page</code>&gt;?这个标签一出现将会改变单一页面的格局，一个页面可能拥有多个page，并定义多个page的切换效果，浏览器就去实现吧。开发人员就又轻松了。好吧，这些都是意淫，话说回来，现在什么都没有，还是得自己开发呀。今天说说菜单如何左右折叠，效果嘛，原生APP中处处可见。这种把导航菜单折叠后隐藏起来的信息组织方式几乎成了原生APP的设计范式。</p>
+<p><img src="/img/collapse1.jpg" alt="facebook"><br>facebook中菜单折叠</p>
+<h4 id="bootstrap中有没有此项功能:">bootstrap中有没有此项功能:</h4>
+<p>bootsrap是webapp的开发利器，它通过在html上设置自定义属性定制出常见的页面布局和效果，最近的项目也是在bootstrap基础上开发的，所以顺便查找bootstrap是否支持此项功能。事实上，其官网上<a href="http://v3.bootcss.com/javascript/#collapse" target="_blank" rel="external">http://v3.bootcss.com/javascript/#collapse</a>提供了collapse插件，垂直方面上可以折叠和展开。通过调试器能够看出其大体实现原理：<br>1、默认情况下折叠：每个导航包括标题和内容两部分，内容默认隐藏：display：none；height：0；<br>2、点击某个导航：给内容增加动画样式 addClass(“.collapsing”)<br>        .collapsing{height:0;-webkit-transition:height .35s ease;}<br>    同时获取内容高度并设置高度，内容将按照动画样式用时0.35s以慢快慢的速度完成高度从0到指定值的过程。动画完成后删除此样式。</p>
+<p>实际上，是CSS3流畅地完成了需要显示的内容的高度变化，将其下方内容挤走。那如何转移为横向的折叠呢？</p>
+<h4 id="只有垂直折叠，如何横行折叠">只有垂直折叠，如何横行折叠</h4>
+<p>bootstrap的官网实例中没有横向折叠，但是网上也能搜索出利用bootstrap的某个版本（链接地址到github）或者变种（链接到twitter）能够实现横向折叠。如果项目中已经引用了不同的版本或是自定义版本，为了一个效果便替换了新的版本是不可取的，花时间去研究两个版本的不同也不值得，尤其是自定义版本，既然选择了自定义就意味着你得了解它的代码，能够随时添加或修改。实现上也比较简单，可以自己做些修改：</p>
+<p><img src="/img/collapse2.jpg" alt="实例图"></p>
+<pre><code><span class="class">.viewport</span> {
+    <span class="attribute">overflow</span><span class="value">: hidden;</span> <span class="comment">//使页面占满屏幕避免出现横向滚动条</span>
+}
+<span class="class">.viewport</span> <span class="class">.frame</span> {
+  <span class="attribute">width</span><span class="value">: <span class="number">200</span>%;</span>  <span class="comment">//一唱</span>
+  <span class="attribute">height</span><span class="value">: auto;</span>
+}
+
+<span class="class">.viewport</span> <span class="class">.frame</span> <span class="class">.menu</span> {
+  <span class="attribute">height</span><span class="value">: auto;</span>    
+}
+<span class="class">.viewport</span> <span class="class">.frame</span> <span class="class">.menu</span><span class="class">.collapse</span> {
+  <span class="attribute">float</span><span class="value">: left;</span>
+  <span class="attribute">height</span><span class="value">: <span class="number">100</span>% <span class="important">!important</span>;</span>
+  <span class="attribute">width</span><span class="value">: auto;</span> 
+}
+
+<span class="comment">//折叠状态：设置宽度动画，初始宽度为0</span>
+<span class="class">.viewport</span> <span class="class">.frame</span> <span class="class">.menu</span><span class="class">.collapse</span><span class="class">.width</span> {
+   <span class="attribute">position</span><span class="value">: relative;</span>
+  <span class="attribute">width</span><span class="value">:<span class="number">0</span>;</span>
+  <span class="attribute">overflow</span><span class="value">: hidden;</span>
+  -webkit-<span class="attribute">transition</span><span class="value">: width <span class="number">0.35</span>s ease;</span>
+  -moz-<span class="attribute">transition</span><span class="value">: width <span class="number">0.35</span>s ease;</span>
+  -o-<span class="attribute">transition</span><span class="value">: width <span class="number">0.35</span>s ease;</span>
+  <span class="attribute">transition</span><span class="value">: width <span class="number">0.35</span>s ease;</span> 
+}
+<span class="comment">//展开状态：动画结束宽度无250px</span>
+<span class="class">.viewport</span> <span class="class">.frame</span> <span class="class">.menu</span><span class="class">.collapse</span><span class="class">.widthauto</span>{
+    <span class="attribute">width</span><span class="value">:<span class="number">250</span>px;</span>
+}
+
+<span class="comment">//左侧导航内容</span>
+<span class="class">.viewport</span> <span class="class">.frame</span> <span class="class">.menu</span> <span class="class">.collapse-inner</span> {
+  <span class="attribute">position</span><span class="value">: relative;</span>
+  <span class="attribute">width</span><span class="value">: <span class="number">250</span>px;</span>
+  <span class="attribute">height</span><span class="value">: <span class="number">100</span>%;</span> 
+}
+<span class="comment">//右侧内容即屏幕中心内容</span>
+<span class="class">.viewport</span> <span class="class">.frame</span> <span class="class">.view</span> {
+  <span class="attribute">float</span><span class="pseudo">:left</span>; 
+  <span class="attribute">width</span><span class="value">:<span class="number">50</span>%;</span>   <span class="comment">//一和：外层容器为200%，内层为50%，一唱一和正好是原始大小100%。</span>
+  <span class="attribute">height</span><span class="value">: auto;</span> 
+  <span class="attribute">overflow</span><span class="value">: hidden;</span> 
+  <span class="attribute">box-shadow</span><span class="value">:<span class="number">0</span> -<span class="number">12</span>px <span class="number">15</span>px <span class="hexcolor">#999</span>;</span>
+  <span class="attribute">min-height</span><span class="value">: <span class="number">400</span>px;</span>
+}
+</code></pre><p>这是实例演示了如何实现左侧折叠，具体可见demo（还未添加链接），那如何实现左右侧双向折叠呢？设置300%和33.3333333%吗？且听下回分解。</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>最近的工作都转移到移动开发中，针对主站www.l99.com开发一套移动端版本，像之前写的《webapp立方没体诞生之初》、《单页应用中页面转场的实现》都是针对此项目。</p>
+<p>借此谈谈对原生APP和HTML5 WEBAPP的看法，关于各有千秋、根据项目需求的说法谁都]]>
+    </summary>
+    
+      <category term="collapse html5 bootstrap" scheme="http://yoursite.com/tags/collapse-html5-bootstrap/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[seajs源码解析]]></title>
+    <link href="http://yoursite.com/2014/03/17/seajs-source/"/>
+    <id>http://yoursite.com/2014/03/17/seajs-source/</id>
+    <published>2014-03-17T05:53:07.000Z</published>
+    <updated>2014-09-27T06:03:29.000Z</updated>
+    <content type="html"><![CDATA[<p>关于seajs的源码解析玉伯自己也只写了两篇<a href="http://chuansongme.com/n/124571" target="_blank" rel="external">http://chuansongme.com/n/124571</a>、<a href="http://chuansongme.com/n/126184" target="_blank" rel="external">http://chuansongme.com/n/126184</a>，去年订阅他的微信号后就已拜读过。讲述了目录结构、大闭包等这些表面的细节，还未真正写到精髓，就没有了。最近项目中应用了seajs，模块化改造也并不复杂，腾出时间专门看看源码。<br>下载个seajs，src目录如下：</p>
+<pre><code><span class="comment">src</span>
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">intro</span><span class="string">.</span><span class="comment">js</span>             <span class="literal">-</span><span class="literal">-</span> <span class="comment">全局闭包头部</span>
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">sea</span><span class="string">.</span><span class="comment">js</span>               <span class="literal">-</span><span class="literal">-</span> <span class="comment">基本命名空间</span>
+
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">util</span><span class="literal">-</span><span class="comment">lang</span><span class="string">.</span><span class="comment">js</span>         <span class="literal">-</span><span class="literal">-</span> <span class="comment">语言增强</span>
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">util</span><span class="literal">-</span><span class="comment">events</span><span class="string">.</span><span class="comment">js</span>       <span class="literal">-</span><span class="literal">-</span> <span class="comment">简易事件机制</span>
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">util</span><span class="literal">-</span><span class="comment">path</span><span class="string">.</span><span class="comment">js</span>         <span class="literal">-</span><span class="literal">-</span> <span class="comment">路径处理</span>
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">util</span><span class="literal">-</span><span class="comment">request</span><span class="string">.</span><span class="comment">js</span>      <span class="literal">-</span><span class="literal">-</span> <span class="comment">HTTP</span> <span class="comment">请求</span>
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">util</span><span class="literal">-</span><span class="comment">deps</span><span class="string">.</span><span class="comment">js</span>         <span class="literal">-</span><span class="literal">-</span> <span class="comment">依赖提取</span>
+
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">module</span><span class="string">.</span><span class="comment">js</span>            <span class="literal">-</span><span class="literal">-</span> <span class="comment">核心代码</span>
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">config</span><span class="string">.</span><span class="comment">js</span>            <span class="literal">-</span><span class="literal">-</span> <span class="comment">配置</span>
+<span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">outro</span><span class="string">.</span><span class="comment">js</span>             <span class="literal">-</span><span class="literal">-</span> <span class="comment">全局闭包尾部</span>
+</code></pre><p>Dist目录中的sea-debug.js就是上述文件按顺序合并而成，未压缩代码行900+，按模块回顾下吧。</p>
+<p>intro.js，只是一个包装而且是个上包装，下包装见outro.js。</p>
+<pre><code>(<span class="function"><span class="keyword">function</span><span class="params">(global, undefined)</span> {</span>
+    <span class="keyword">if</span> (<span class="keyword">global</span>.seajs) {
+        <span class="keyword">return</span>
+    }
+</code></pre><p>sea.js，确保全局环境中只有一个seajs，events、。。。等均保存在data中。</p>
+<pre><code><span class="built_in">var</span> seajs <span class="subst">=</span> <span class="built_in">global</span><span class="built_in">.</span>seajs <span class="subst">=</span> {
+    <span class="comment">// The current version of Sea.js being used</span>
+    version: <span class="string">"2.1.1"</span>
+}
+<span class="built_in">var</span> <span class="built_in">data</span> <span class="subst">=</span> seajs<span class="built_in">.</span><span class="built_in">data</span> <span class="subst">=</span> {}
+</code></pre><p>util-lang.js</p>
+<pre><code><span class="function"><span class="keyword">function</span> <span class="title">isType</span><span class="params">(type)</span> {</span>
+    <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(obj)</span> {</span>
+        <span class="keyword">return</span> <span class="built_in">Object</span>.prototype.toString.call(obj) === <span class="string">"[object "</span> + type + <span class="string">"]"</span>
+    }
+}
+<span class="keyword">var</span> isObject = isType(<span class="string">"Object"</span>)
+<span class="keyword">var</span> isString = isType(<span class="string">"String"</span>)
+<span class="keyword">var</span> isArray = <span class="built_in">Array</span>.isArray || isType(<span class="string">"Array"</span>)
+<span class="keyword">var</span> isFunction = isType(<span class="string">"Function"</span>)
+
+<span class="keyword">var</span> _cid = <span class="number">0</span>
+<span class="function"><span class="keyword">function</span> <span class="title">cid</span><span class="params">()</span> {</span>
+    <span class="keyword">return</span> _cid++
+}
+</code></pre><p>util-events.js,简单事件机制包括绑定、解绑、触发。</p>
+<pre><code>var <span class="keyword">events</span> = <span class="transposed_variable">data.</span><span class="keyword">events</span> = <span class="cell">{}</span>
+<span class="transposed_variable">seajs.</span>on = <span class="function"><span class="keyword">function</span><span class="params">(name, callback)</span> {}</span>
+<span class="transposed_variable">seajs.</span>off = <span class="function"><span class="keyword">function</span><span class="params">(name, callback)</span> {}</span>
+var emit = <span class="transposed_variable">seajs.</span>emit = <span class="function"><span class="keyword">function</span><span class="params">(name, data)</span> {}</span>
+</code></pre><p>util-path.js</p>
+<pre><code><span class="keyword">var</span> doc = document
+<span class="keyword">var</span> loc = location
+<span class="keyword">var</span> cwd = dirname(loc.href)
+<span class="keyword">var</span> scripts = doc.getElementsByTagName(<span class="string">"script"</span>)
+
+<span class="comment">// 得到最后一个script标签</span>
+<span class="keyword">var</span> loaderScript = doc.getElementById(<span class="string">"seajsnode"</span>) ||
+    scripts[scripts.length - <span class="number">1</span>]
+<span class="comment">// 最后一个script标签的请求路径，不包括文件名</span>
+<span class="keyword">var</span> loaderDir = dirname(getScriptAbsoluteSrc(loaderScript) || cwd)
+<span class="comment">// 得到指定标签的全路径</span>
+<span class="function"><span class="keyword">function</span> <span class="title">getScriptAbsoluteSrc</span><span class="params">(node)</span> {</span>}
+<span class="comment">//提取路径名，如dirname("a/b/c.js?t=123#xx/zz") ==&gt; "a/b/"</span>
+<span class="function"><span class="keyword">function</span> <span class="title">dirname</span><span class="params">(path)</span> {</span>}
+<span class="function"><span class="keyword">function</span> <span class="title">realpath</span><span class="params">(path)</span> {</span>}
+<span class="function"><span class="keyword">function</span> <span class="title">normalize</span><span class="params">(path)</span> {</span>}
+<span class="function"><span class="keyword">function</span> <span class="title">parseAlias</span><span class="params">(id)</span> {</span>}
+<span class="function"><span class="keyword">function</span> <span class="title">parsePaths</span><span class="params">(id)</span> {</span>}
+<span class="function"><span class="keyword">function</span> <span class="title">parseVars</span><span class="params">(id)</span> {</span>}
+<span class="function"><span class="keyword">function</span> <span class="title">parseMap</span><span class="params">(uri)</span> {</span>}
+<span class="function"><span class="keyword">function</span> <span class="title">addBase</span><span class="params">(id, refUri)</span> {</span>}
+<span class="function"><span class="keyword">function</span> <span class="title">id2Uri</span><span class="params">(id, refUri)</span> {</span>}
+
+<span class="comment">// 对外接口</span>
+seajs.resolve = id2Uri
+</code></pre><p>util-request.js</p>
+<pre><code>//创建<span class="tag">&lt;<span class="title">link</span>&gt;</span>或<span class="tag">&lt;<span class="title">script</span>&gt;</span><span class="javascript">标签，预加载后插入到页面中。
+<span class="function"><span class="keyword">function</span> <span class="title">request</span><span class="params">(url, callback, charset)</span> {</span>}
+<span class="function"><span class="keyword">function</span> <span class="title">getCurrentScript</span><span class="params">()</span> {</span>}</span>
+</code></pre><p>util-deps.js，只有一个函数，用于提取每个模块中require的文件</p>
+<pre><code><span class="function"><span class="keyword">function</span> <span class="title">parseDependencies</span><span class="params">(code)</span> {</span>}
+</code></pre><p>module.js 模块化的核心策略</p>
+<pre><code>seajs.<span class="keyword">use</span> = <span class="function"><span class="keyword">function</span><span class="params">(ids, callback)</span> {</span>
+    <span class="comment">//加载config中的预加载项</span>
+    Module.preload(<span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+        <span class="comment">// ids：依赖模块或是模块本身，第三个参数为模块uri，如</span>
+        http:<span class="comment">//www.l99.com/_use_4，为什么要拼凑这样一个uri。</span>
+        Module.<span class="keyword">use</span>(ids, callback, data.cwd + <span class="string">"_use_"</span> + cid())
+    })
+    <span class="keyword">return</span> seajs
+}
+<span class="comment">//获取模块缓存或创建一个新的模块</span>
+Module.<span class="keyword">use</span> = <span class="function"><span class="keyword">function</span> <span class="params">(ids, callback, uri)</span> {</span>}
+<span class="comment">//加载模块、并设置相应的状态、_waitings、_remain</span>
+Module.prototype.load = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>}
+<span class="comment">//得到最终的调用模块的uris</span>
+Module.prototype.resolve = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>}
+<span class="comment">//通过id和refUri得到最终的uri，如"dashboard/dashboard_inset_header" + </span>
+<span class="comment">//"http://www.l99.com/_use_1"=&gt; //"http://www.l99.com/jscmd/dashboard/dashboard_inset_header.js?v=20140305"</span>
+Module.resolve = <span class="function"><span class="keyword">function</span><span class="params">(id, refUri)</span> {</span>}
+<span class="comment">//模块的构造函数</span>
+<span class="function"><span class="keyword">function</span> <span class="title">Module</span><span class="params">(uri, deps)</span> {</span>
+    <span class="keyword">this</span>.uri = uri
+    <span class="keyword">this</span>.dependencies = deps || []
+    <span class="keyword">this</span>.exports = <span class="literal">null</span>
+    <span class="keyword">this</span>.status = <span class="number">0</span>
+    <span class="comment">// Who depends on me</span>
+    <span class="keyword">this</span>._waitings = {}
+    <span class="comment">// The number of unloaded dependencies</span>
+    <span class="keyword">this</span>._remain = <span class="number">0</span>
+}
+</code></pre><p>。。。<br>这个地方还有很多实质内容没有分析，今天先到这，专注不下去了。<br>。。。</p>
+<p>outro.js，将this传入闭包体global，在浏览器环境中global 是 window 对象。在 Node.js 环境中global 则是 node 环境中的 global 对象</p>
+<pre><code>})(<span class="keyword">this</span>);
+</code></pre>]]></content>
+    <summary type="html">
+    <![CDATA[<p>关于seajs的源码解析玉伯自己也只写了两篇<a href="http://chuansongme.com/n/124571" target="_blank" rel="external">http://chuansongme.com/n/124571</a>、<a hre]]>
+    </summary>
+    
+      <category term="seajs源码" scheme="http://yoursite.com/tags/seajs%E6%BA%90%E7%A0%81/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[移动端浏览器下页面制作规范]]></title>
+    <link href="http://yoursite.com/2014/03/01/h5-specs/"/>
+    <id>http://yoursite.com/2014/03/01/h5-specs/</id>
+    <published>2014-03-01T13:47:27.000Z</published>
+    <updated>2014-10-09T14:00:43.000Z</updated>
+    <content type="html"><![CDATA[<h2 id="要求：">要求：</h2>
+<p>兼容各种分辨率下的iPhone和Android设备。</p>
+<h2 id="要点：">要点：</h2>
+<h3 id="1-_视口viewport">1. 视口viewport</h3>
+<p>头部声明与其他页面一致，使用HTML5的写法&lt;!DOCTYPE html&gt;，但需要在head中增加一行：</p>
+<pre><code><span class="tag">&lt;<span class="title">meta</span> <span class="attribute">name</span>=<span class="value">"viewport"</span> <span class="attribute">content</span>=<span class="value">"width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"</span>&gt;</span>
+</code></pre><p>此处width不要固定宽度，不要后端传值，使用设备宽度即可，并且不允许缩放，以避免页面出现横向滚动条。</p>
+<h3 id="2-_尺寸设置">2. 尺寸设置</h3>
+<p>一般情况下，设计师提供的是适配iphone尺寸的设计图，通常为640*960，但是iPhone4+在解析网页的时候依旧把自己当作一台横向分辨率为320px的设备，所以针对设计图中标识的横向尺寸按比例缩小，纵向尺寸不变，字体大小减小到2/3，背景图按比例缩小，背景图不能拼接。 尽量不使用固定宽度，使用百分比无法除尽时可以精确到小数点后七位，基本保证无误差。若使用固定宽度，请放在媒体查询中：</p>
+<pre><code>@media screen <span class="literal">and</span> (<span class="keyword">min</span><span class="attribute">-width</span>: <span class="number">320</span>px){}
+@media screen <span class="literal">and</span> (<span class="keyword">min</span><span class="attribute">-width</span>: <span class="number">480</span>px){}
+@media screen <span class="literal">and</span> (<span class="keyword">min</span><span class="attribute">-width</span>: <span class="number">640</span>px){}
+</code></pre><p>注意使用min-width，而不是min -device-width。</p>
+<h3 id="3-_从桌面端向下设计VS从移动端向上设计">3. 从桌面端向下设计VS从移动端向上设计</h3>
+<p>注意媒体查询的顺序。<br>从桌面端向下设计：</p>
+<pre><code>@media screen <span class="literal">and</span> (<span class="keyword">min</span><span class="attribute">-width</span>: <span class="number">640</span>px){}
+@media screen <span class="literal">and</span> (<span class="keyword">max</span><span class="attribute">-width</span>: <span class="number">640</span>px){}
+@media screen <span class="literal">and</span> (<span class="keyword">max</span><span class="attribute">-width</span>: <span class="number">480</span>px){}
+@media screen <span class="literal">and</span> (<span class="keyword">max</span><span class="attribute">-width</span>: <span class="number">320</span>px){}
+</code></pre><p>从移动端向上设计：</p>
+<pre><code>@media screen <span class="literal">and</span> (<span class="keyword">min</span><span class="attribute">-width</span>: <span class="number">320</span>px){}
+@media screen <span class="literal">and</span> (<span class="keyword">min</span><span class="attribute">-width</span>: <span class="number">480</span>px){}
+@media screen <span class="literal">and</span> (<span class="keyword">min</span><span class="attribute">-width</span>: <span class="number">640</span>px){}
+</code></pre><p>推荐使用<strong>从移动端向上设计</strong>，所需的CSS代码更少，代码结构更加清晰。</p>
+<h3 id="4-_浏览器模拟测试">4. 浏览器模拟测试</h3>
+<p>测试时Chrome的UA配置如下：</p>
+<p><img src="/img/h5specs.png" alt="移动APP制作规范"></p>
+<h3 id="5-_改变盒模型">5. 改变盒模型</h3>
+<p>标准盒模型下width属性只是内容的宽度，在响应式设计中大部分width均为百分比，如果再设置padding和border会导致内容溢出或换行，所以通常在CSS顶级样式中加入：</p>
+<pre><code>*, *<span class="pseudo">:before</span>, *<span class="pseudo">:after</span> <span class="rules">{<span class="rule"><span class="attribute">-webkit-box-sizing</span>:<span class="value">border-box</span></span>;<span class="rule"><span class="attribute">-moz-box-sizing</span>:<span class="value">border-box</span></span>;<span class="rule"><span class="attribute">box-sizing</span>:<span class="value">border-box</span></span>;<span class="rule">}</span></span>，
+</code></pre><p>使width属性包含padding和border。</p>
+<h3 id="6-_手机端测试">6. 手机端测试</h3>
+<p>①可将静态页面放置本地目录下:</p>
+<pre><code>C:<span class="command">\Program</span> Files (x86)<span class="command">\Apache</span> Software Foundation<span class="command">\Apache</span>2.2<span class="command">\htdocs</span>
+</code></pre><p>打开手机浏览器访问：</p>
+<pre><code><span class="label">http:</span>//<span class="number">192.168</span><span class="number">.50</span><span class="number">.241</span>/m/cbs-download<span class="preprocessor">.html</span>(本机ip+项目目录)
+</code></pre><p>②若访问本地java项目如lifeix-web中的页面，可手动修改手机上的HTTP代理，服务器为本机ip，端口为80，打开手机浏览器通过域名访问。</p>
+<p>针对简单的APP下载页面，了解以上内容即可。</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<h2 id="要求：">要求：</h2>
+<p>兼容各种分辨率下的iPhone和Android设备。</p>
+<h2 id="要点：">要点：</h2>
+<h3 id="1-_视口viewport">1. 视口viewport</h3>
+<p>头部声明与其他页面一致，使用HTM]]>
+    </summary>
+    
+      <category term="h5 webapp iPhone Android viewport media query" scheme="http://yoursite.com/tags/h5-webapp-iPhone-Android-viewport-media-query/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[老调重弹：那些年一遍又一遍领悟过的原型链]]></title>
+    <link href="http://yoursite.com/2014/02/12/js-prototype/"/>
+    <id>http://yoursite.com/2014/02/12/js-prototype/</id>
+    <published>2014-02-12T07:22:48.000Z</published>
+    <updated>2014-09-27T07:41:06.000Z</updated>
+    <content type="html"><![CDATA[<p>一过年吃了许多肉，见了许多人，又思考了许多人生大事，中了年后综合症的招，唯恐脑子不再灵光，荒废专业。特意把基础知识再梳理一下：</p>
+<h3 id="一、简单原型链：构造函数、原型、实例">一、简单原型链：构造函数、原型、实例</h3>
+<p><img src="/img/prototype1.png" alt="简单原型链"><br>这是Nicholas C. Zakas的《Javascript高级程序设计》P120的截图。有一个前端朋友说，他曾经怎么都不理解原型链直到看到此书此章节才如醍醐灌顶。我想，看一遍就领悟恐怕也是神人了。</p>
+<p>这张图的重点总结如下：</p>
+<ol>
+<li>只要创建了一个新函数，就为该函数创建一个prototype属性</li>
+<li>Prototype属性会自动获得一个constructor属性。</li>
+<li>Constructor属性包含快一个指向prototype所在函数的指针。</li>
+<li>可为原型增加其他属性和方法</li>
+<li>创建新实例，其内部包含一个名为protyo (内部属性)的指针指向其构造函数的原型属性。</li>
+</ol>
+<p>此外，还有两个特别的方法用来确定其内部关系：</p>
+<ol>
+<li>实例person1、person2与Person原型之间的关系<pre><code> <span class="function">alert(Person.prototype.<span class="function">isPrototypeOf(person1)</span>)</span>;<span class="comment">//true</span>
+ <span class="function">alert(Person.prototype.<span class="function">isPrototypeOf(person2)</span>)</span>;<span class="comment">//true来自实例本身</span>
+</code></pre></li>
+<li>我们知道，如果要读取person1的某个属性，搜索首先从实例本身开始，如果没有会继续搜索原型对象。那么如何知道搜索到的属性是来自实例本身还是原型？<pre><code> <span class="function">alert(person1.<span class="function">hasOwnProperty(“name”)</span>)</span> <span class="comment">//true来自实例本身</span>
+</code></pre></li>
+</ol>
+<p><strong>最后，原型对象有一个问题。</strong><br>原型中所有属性是被很多实例共享的，通过在实例上添加一个同名属性可以隐藏原型中的对应属性。但是如果这个属性是引用属性就有麻烦了。举例如下：</p>
+<pre><code><span class="function"><span class="keyword">function</span> <span class="title">Person</span><span class="params">()</span>{</span>   }
+Person.prototype = {
+    constructor:Person,
+    name:<span class="string">"Nicholas"</span>,
+    age:<span class="number">29</span>,
+    friends:[<span class="string">"shelby"</span>,<span class="string">"Court"</span>],
+    sayName:<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>....}
+}
+<span class="keyword">var</span> person1 = <span class="keyword">new</span> Person();
+<span class="keyword">var</span> person2 = <span class="keyword">new</span> Person();
+person1.friends.push(<span class="string">"Van"</span>);
+alert(person1.friends);<span class="comment">//["shelby","Court","Van"]</span>
+alert(person2.friends);<span class="comment">//["shelby","Court","Van"]</span>
+alert(person1.friends===person2.friends); <span class="comment">//true</span>
+</code></pre><p>原因是friends数组存在于Person.prototype中，不是在person1中。如果是简单属性赋值比如person1.age = 30并不影响Person.prototype.age=29。</p>
+<h3 id="二、继承原型链：">二、继承原型链：</h3>
+<p><img src="/img/prototype2.png" alt="简单原型链"><br>提示：所有函数的默认原型都是Object的实例，因此默认原型都会包含一个内部指针__proto指向Object.prototype。继承Object这部分未在图中体现。<br>下面我们研究继承是怎么实现的？</p>
+<pre><code><span class="function"><span class="keyword">function</span> <span class="title">Animal</span><span class="params">()</span>{</span>
+    <span class="keyword">this</span>.species = “动物”
+}
+Animal.prototype = {
+    say: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        alert(“I am a ”+ <span class="keyword">this</span>.species +”,my name <span class="keyword">is</span> XXX”);
+}
+}
+<span class="function"><span class="keyword">function</span> <span class="title">cat</span><span class="params">(name,color)</span>{</span>
+    <span class="keyword">this</span>.name = name;
+    <span class="keyword">this</span>.color = color;
+}
+</code></pre><p>如何使”猫”继承“动物”？继承分两部分，分别是构造函数继承和原型继承。构造函数继承实现了对实例属性的继承，原型实现对原型属性和方法的继承。</p>
+<h4 id="1-_构造函数继承">1. 构造函数继承</h4>
+<pre><code>    <span class="function"><span class="keyword">function</span> <span class="title">cat</span> <span class="params">(name, color)</span>{</span>
+        Animal.call(<span class="keyword">this</span>);
+        <span class="keyword">this</span>.name = name;
+        <span class="keyword">this</span>.color = color;
+    }
+</code></pre><h4 id="2-_原型继承">2. 原型继承</h4>
+<pre><code>    Cat.prototype = <span class="keyword">new</span> Animal();
+    Cat.prototype.<span class="keyword">constructor</span> = Cat;
+    <span class="keyword">var</span> cat1 = <span class="keyword">new</span> Cat(“大毛”，“黄色”);
+    alert（cat1.species）； <span class="comment">//动物</span>
+</code></pre><p>此时，原型继承同时继承了构造函数中不变的属性species。事实上，不变的属性应该写入原型，作为原型属性。</p>
+<h4 id="3-_直接原型继承">3. 直接原型继承</h4>
+<p>为什么要将Animal的实例作为Cat的原型呢？如果将Animal的原型赋值给Cat的原型如何呢？<br>改写Animal对象：</p>
+<pre><code>    function Animal(){}
+    Animal<span class="preprocessor">.prototype</span><span class="preprocessor">.species</span> = “动物”<span class="comment">;</span>
+    Cat<span class="preprocessor">.prototype</span> = Animal<span class="preprocessor">.prototype</span><span class="comment">;</span>
+    Cat<span class="preprocessor">.prototype</span><span class="preprocessor">.constructor</span> = Cat<span class="comment">;</span>
+    var cat1 = new Cat(“大毛”，“黄色”)<span class="comment">;</span>
+    alert（cat1<span class="preprocessor">.species</span>）； //动物
+</code></pre><p>优点：不用执行和建立Animal实例，省内存<br>缺点：cat.prototype和animal.prototype都指向同一对象，对cat.prototype的修改都会反映到animal.prototype上。</p>
+<h4 id="4-_对上个方案的改进——利用空对象作中介">4. 对上个方案的改进——利用空对象作中介</h4>
+<pre><code>    <span class="function"><span class="keyword">function</span> <span class="title">extend</span><span class="params">(subclass, superclass)</span> {</span>
+            <span class="keyword">var</span> F = <span class="function"><span class="keyword">function</span> <span class="params">()</span> {</span>};
+            F.prototype = superclass.prototype;
+            subclass.prototype = <span class="keyword">new</span> F();
+            subclass.prototype.constructor = subclass;
+    }
+</code></pre><h4 id="5-_拷贝继承">5. 拷贝继承</h4>
+<p>引颖同学曾大力推荐的自创类库中使用的是拷贝继承，将父对象的所有属性和方法拷贝进子对象。</p>
+<pre><code>    <span class="function"><span class="keyword">function</span> <span class="title">extend</span> （<span class="title">subclass</span>, <span class="title">superclass</span>）{</span>
+            <span class="keyword">Var</span> p = superclass.prototype;
+            <span class="keyword">Var</span> c = subclass.prototype;
+            <span class="keyword">for</span>(<span class="keyword">var</span> i in p){
+                C[i] = p[i]
+            }
+    }
+</code></pre>]]></content>
+    <summary type="html">
+    <![CDATA[<p>一过年吃了许多肉，见了许多人，又思考了许多人生大事，中了年后综合症的招，唯恐脑子不再灵光，荒废专业。特意把基础知识再梳理一下：</p>
+<h3 id="一、简单原型链：构造函数、原型、实例">一、简单原型链：构造函数、原型、实例</h3>
+<p><img src="/img]]>
+    </summary>
+    
+      <category term="原型链 继承" scheme="http://yoursite.com/tags/%E5%8E%9F%E5%9E%8B%E9%93%BE-%E7%BB%A7%E6%89%BF/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[单页应用中页面转场的实现]]></title>
+    <link href="http://yoursite.com/2014/02/06/h5-pagetransition/"/>
+    <id>http://yoursite.com/2014/02/06/h5-pagetransition/</id>
+    <published>2014-02-06T07:42:46.000Z</published>
+    <updated>2014-09-27T08:09:55.000Z</updated>
+    <content type="html"><![CDATA[<p>在上上篇文章《webapp立方没体诞生之初》中提到，移动框架只使用了Boostrap，但后来迫于页面转场效果，自定义build了jquery mobile的Animated page Transitions部分功能，60多k的代码也让人唏嘘。于是，剖析源码，尝试简化。</p>
+<p><img src="/img/pageTransition1.png" alt="页面转场"></p>
+<p>在看源码之前思考一下自己如何实现：</p>
+<ol>
+<li>页面切换效果：如何让上一个页面移开，让下个页面进入</li>
+<li>当上个页面的滚动条向下滚动一段距离后，如何平滑地移动到下个页面的顶部。</li>
+<li>浏览器中如何回退？</li>
+</ol>
+<h3 id="一、_页面初始化和事件绑定">一、 页面初始化和事件绑定</h3>
+<p><strong>HTML：</strong></p>
+<pre><code>    <span class="subst">&lt;</span>div <span class="built_in">data</span><span class="attribute">-role</span><span class="subst">=</span><span class="string">"page"</span> id<span class="subst">=</span><span class="string">"page_content"</span> class<span class="subst">=</span><span class="string">""</span><span class="subst">&gt;</span>
+        <span class="attribute">...</span><span class="attribute">...</span>
+        <span class="subst">&lt;</span>a class<span class="subst">=</span><span class="string">"p_notes left"</span> href<span class="subst">=</span><span class="string">"#page_notes"</span> <span class="built_in">data</span><span class="attribute">-transition</span><span class="subst">=</span><span class="string">"slide"</span><span class="subst">&gt;</span><span class="number">8</span>条回应<span class="subst">&lt;</span>/a<span class="subst">&gt;</span>
+        <span class="attribute">...</span><span class="attribute">...</span>
+    <span class="subst">&lt;</span>/div<span class="subst">&gt;</span>
+    <span class="subst">&lt;</span>div <span class="built_in">data</span><span class="attribute">-role</span><span class="subst">=</span><span class="string">"page"</span> id<span class="subst">=</span><span class="string">"page_notes"</span> class<span class="subst">=</span><span class="string">"lst_notescontainer"</span><span class="subst">&gt;</span>
+        <span class="attribute">...</span><span class="attribute">...</span>
+    <span class="subst">&lt;</span>/div<span class="subst">&gt;</span>
+</code></pre><p><strong>Jquery.mobile.custom.js：</strong></p>
+<p><img src="/img/pageTransition2.png" alt="页面转场"></p>
+<p>页面初始化中主要做了以下事情，暂不涉及hash存储：</p>
+<ol>
+<li>记录所有pages对象(含有data-role=”page”的DOM)；</li>
+<li>将第一个page设为当前page；</li>
+<li>让当前page入场。</li>
+</ol>
+<p>代码简化如下：</p>
+<pre><code><span class="keyword">var</span> PageTransition = (<span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+    <span class="keyword">var</span> <span class="variable">$pages</span>; <span class="comment">//记录所有page对象</span>
+    <span class="keyword">var</span> pageArray = []; <span class="comment">//记录所有pageId</span>
+    <span class="keyword">return</span> {
+        init: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+            <span class="variable">$pages</span> = $(<span class="string">"*[data-role='page']"</span>);
+            $(<span class="string">"body"</span>).addClass(<span class="string">"ui-mobile"</span>);
+            <span class="keyword">for</span>(<span class="keyword">var</span> i = <span class="number">0</span>; i &lt; <span class="variable">$pages</span>.length; i++){
+                pageArray.push(<span class="variable">$pages</span>.eq(i).attr(<span class="string">"id"</span>));
+                <span class="comment">//标记首个page为当前活动page</span>
+                <span class="keyword">if</span>(i == <span class="number">0</span>){
+                    <span class="variable">$pages</span>.eq(i).addClass(<span class="string">"ui-page-active"</span>);
+                }
+            }
+        }
+}
+}());
+</code></pre><p>页面初始化完成后，向锚点绑定事件来完成页面转场：<br><img src="/img/pageTransition3.png" alt="页面转场"><br>那这个神秘的changePage方法是如何实现的?</p>
+<h3 id="二、页面转场的外衣">二、页面转场的外衣</h3>
+<p>辗转经历各种call之后进入change方法，别以为这就登堂入室了，还要一层层剥开迷雾~~<br><img src="/img/pageTransition4.png" alt="页面转场"><br>对_cssTransition望文生义，难道是CSS3的transition实现的？那岂不是对上下页add或remove 相应动画的class即可。耶！确实如此，不过还得耐得性子读一读这像老太太裹脚布一样的代码~~~</p>
+<h3 id="三、页面转场的核心代码">三、页面转场的核心代码</h3>
+<p><img src="/img/pageTransition5.png" alt="页面转场"></p>
+<p><strong>CSS:</strong></p>
+<pre><code><span class="at_rule">@<span class="keyword">-webkit-keyframes</span> slideinfromright </span>{
+    <span class="tag">from</span> <span class="rules">{<span class="rule"><span class="attribute">-webkit-transform</span>:<span class="value"> <span class="function">translate3d(<span class="number">100</span>%, <span class="number">0</span>, <span class="number">0</span>)</span></span></span>;<span class="rule">}</span></span>
+    <span class="tag">to</span> <span class="rules">{<span class="rule"><span class="attribute">-webkit-transform</span>:<span class="value"> <span class="function">translate3d(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)</span></span></span>;<span class="rule">}</span></span>
+}
+
+<span class="at_rule">@<span class="keyword">-webkit-keyframes</span> slideouttoleft </span>{
+    <span class="tag">from</span> <span class="rules">{<span class="rule"><span class="attribute">-webkit-transform</span>:<span class="value"> <span class="function">translate3d(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)</span></span></span>;<span class="rule">}</span></span>
+    <span class="tag">to</span> <span class="rules">{<span class="rule"><span class="attribute">-webkit-transform</span>:<span class="value"> <span class="function">translate3d(-<span class="number">100</span>%, <span class="number">0</span>, <span class="number">0</span>)</span></span></span>;<span class="rule">}</span></span>
+}
+<span class="class">.slide</span><span class="class">.out</span>,<span class="class">.slide</span><span class="class">.in</span> <span class="rules">{
+    <span class="rule"><span class="attribute">-webkit-animation-timing-function</span>:<span class="value"> ease-out</span></span>;
+    <span class="rule"><span class="attribute">-webkit-animation-duration</span>:<span class="value"> <span class="number">350</span>ms</span></span>;
+    <span class="rule"><span class="attribute">-moz-animation-timing-function</span>:<span class="value"> ease-out</span></span>;
+    <span class="rule"><span class="attribute">-moz-animation-duration</span>:<span class="value"> <span class="number">350</span>ms</span></span>;
+    <span class="rule"><span class="attribute">animation-timing-function</span>:<span class="value"> ease-out</span></span>;
+    <span class="rule"><span class="attribute">animation-duration</span>:<span class="value"> <span class="number">350</span>ms</span></span>;
+<span class="rule">}</span></span>
+<span class="class">.slide</span><span class="class">.in</span> <span class="rules">{
+    <span class="rule"><span class="attribute">-webkit-transform</span>:<span class="value"> <span class="function">translate3d(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)</span></span></span>;
+    <span class="rule"><span class="attribute">-webkit-animation-name</span>:<span class="value"> slideinfromright</span></span>;
+    <span class="rule"><span class="attribute">-moz-transform</span>:<span class="value"> <span class="function">translateX(<span class="number">0</span>)</span></span></span>;
+    <span class="rule"><span class="attribute">-moz-animation-name</span>:<span class="value"> slideinfromright</span></span>;
+    <span class="rule"><span class="attribute">transform</span>:<span class="value"> <span class="function">translateX(<span class="number">0</span>)</span></span></span>;
+    <span class="rule"><span class="attribute">animation-name</span>:<span class="value"> slideinfromright</span></span>;
+<span class="rule">}</span></span>
+<span class="class">.slide</span><span class="class">.out</span> <span class="rules">{
+    <span class="rule"><span class="attribute">-webkit-transform</span>:<span class="value"> <span class="function">translate3d(-<span class="number">100</span>%, <span class="number">0</span>, <span class="number">0</span>)</span></span></span>;
+    <span class="rule"><span class="attribute">-webkit-animation-name</span>:<span class="value"> slideouttoleft</span></span>;
+    <span class="rule"><span class="attribute">-moz-transform</span>:<span class="value"> <span class="function">translateX(-<span class="number">100</span>%)</span></span></span>;
+    <span class="rule"><span class="attribute">-moz-animation-name</span>:<span class="value"> slideouttoleft</span></span>;
+    <span class="rule"><span class="attribute">transform</span>:<span class="value"> <span class="function">translateX(-<span class="number">100</span>%)</span></span></span>;
+    <span class="rule"><span class="attribute">animation-name</span>:<span class="value"> slideouttoleft</span></span>;
+<span class="rule">}</span></span>
+<span class="class">.ui-page-pre-in</span> <span class="rules">{
+    <span class="rule"><span class="attribute">opacity</span>:<span class="value"> <span class="number">0</span></span></span>;
+<span class="rule">}</span></span>
+<span class="class">.ui-page-active</span> <span class="rules">{
+    <span class="rule"><span class="attribute">display</span>:<span class="value"> block</span></span>;
+    <span class="rule"><span class="attribute">overflow</span>:<span class="value"> visible</span></span>;
+    <span class="rule"><span class="attribute">overflow-x</span>:<span class="value"> hidden</span></span>;
+<span class="rule">}</span></span>
+</code></pre><p>不得不用文字描述一下这个过程，尽管繁琐得要命。<br><img src="/img/pageTransition6.png" alt="页面转场"></p>
+<p>上图为控制台输出，翻译后意思是：<br>1：下页藏到最后面（z-index=-10）<br>2：下页显示又隐藏（display:block &amp;&amp; opacity=0）<br>3：下页不用藏到最后面了，原来在哪就在哪<br>4：下页显示，开始入场<br>5：当前页离场<br>6：动画完成后当前页成为了上页隐藏、并移除动画样式<br>7：动画完成后下页成为了当前页移除动画样式。<br>真是搞不懂1、2、3在墨迹啥。</p>
+<p>自行实现后代码如下：<br><img src="/img/pageTransition7.png" alt="页面转场"><br>文章开头提出了三个问题，至此才说清楚一个。真是想得太远，走得太慢啦。Zepto.js号称是jquery mobile的简化版，有时间再看看它是怎么实现的吧！</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>在上上篇文章《webapp立方没体诞生之初》中提到，移动框架只使用了Boostrap，但后来迫于页面转场效果，自定义build了jquery mobile的Animated page Transitions部分功能，60多k的代码也让人唏嘘。于是，剖析源码，尝试简化。</p]]>
+    </summary>
+    
+      <category term="jquery mobile SAP 转场动画" scheme="http://yoursite.com/tags/jquery-mobile-SAP-%E8%BD%AC%E5%9C%BA%E5%8A%A8%E7%94%BB/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[团队成长记——《在你身边为你设计》读后感]]></title>
+    <link href="http://yoursite.com/2014/01/20/read-team/"/>
+    <id>http://yoursite.com/2014/01/20/read-team/</id>
+    <published>2014-01-20T08:11:26.000Z</published>
+    <updated>2014-09-27T08:17:45.000Z</updated>
+    <content type="html"><![CDATA[<p>最近在看一本书《在你身边为你设计》，出自腾讯CDC团队（用户研究与体验设计中心）的结集文章。看书如见人，通过不同文章的观点和看问题的角度对各个作者的专业方向和管理层级也略知一二。个人更喜欢唐沐的文章，他是腾讯CDC团队的创始人，给大家缕一下这个团队从无到有的过程。</p>
+<h3 id="1-_2003年4月入职UI设计组">1. 2003年4月入职UI设计组</h3>
+<p>唐沐入职腾讯可以说是天时地利，当时QQ作为腾讯唯一的重要产品刚刚完成了原始积累——用户数达到了一个量级，用户对产品的需求也刚刚从满足基本功能转变到追求更好的UI体验。其次，唐沐在大学辅修过工业设计，重要的是在金山练就软件产品UI设计的思路和技能，这些成为在腾讯开展用户体验设计的基石。</p>
+<p>在刚入职的几个月里，他被同事们习以为常地称为“美工”，在非常有限的资源下，不分昼夜地完成了QQ2003、QQGame、TM1.0等设计项目。那个过程中赢得的客户关系和上级信任，是CDC最原始的资本积累。</p>
+<h3 id="2-_2003年5月第一名交互设计师">2. 2003年5月第一名交互设计师</h3>
+<p>当时交互设计还不是一个被广泛理解和接受的词，交互设计所负责的工作基本是被产品经理和GUI设计师填补了。于是按照GUI设计师招聘了第一位工业设计背景的专职的交互设计师。一开始也并不被认可，在一次传统模式还是创新模式的拉锯战中，提供了兼容两种模式，可自由切换的方案，才达到产品经理和用户双赢的局面。这种方案一直持续到2005年，才完全切换到新模式中。</p>
+<h3 id="3_2005年第一个用户体验室">3 2005年第一个用户体验室</h3>
+<p>UI设计组已经有20余人，交互设计师的招聘依然不理想，但内部慢慢形成了培训供血机制，形成了先交互再视觉的设计流程。同时，遇到了一个新问题：交互设计师和产品经理在用户体验的判断上有差异，主观判断较多，莫衷一是。于是，谁来判断设计的好坏？在资源有限的情况下，团队建设了第一间用户体验观察室，非常简陋，只有一些简单的拾音设备和单面镜。至今，CDC拥有专职的用户研究工程师超过40人，近10间专业的用户体验室分布在全国，用户研究方法也从单一的实验室观察扩展到眼动研究、焦点访谈、深度访谈、问卷调查、田野研究等。</p>
+<p>事实上，如果没有第一间用户体验室，用户研究的工作也可以进行，但是这个房间是一个信号，一种态度，需要告诉客户，用户研究是一门专门的学科，可以帮助产品决策。在当时中国互联网和腾讯的大环境里，这确实是一个需要创意和魄力的解决方案。</p>
+<h3 id="4_2006年5月CDC正式成立">4 2006年5月CDC正式成立</h3>
+<p>团队由一个设计中心正式挂牌成立，升级为“公司级”的设计中心，一个独立预算的单位。内部包括三个主要角色：交互设计、视觉设计、用户研究。随着人员的扩充，人事和团队管理都遇到很多新的问题。为了保证对团队文化、专业积累有很好的传承，管理干部基本都从团队中产生，很少外部引进。同时，专业骨干在管理过程中不能忽略自身专业成长和业绩。</p>
+<h3 id="5-_2008年设计研发组成立">5. 2008年设计研发组成立</h3>
+<p>CDC团队规模达到了80多人，项目达到50多，内部客户几乎拓展到了整个腾讯公司。但是开发团队会将功能开发优先于界面开发，并且认为界面开发没有太多值得研究的东西，造成了界面开发的边缘化，也制约着设计能否在产品中得以完美呈现。解决方案就是为设计团队配备开发工程师，招聘开发与设计的“边缘人”（前端开发工程师）并不容易，于是从开发团队的毕业生中“偷”了两个对设计和用研数据感兴趣的候选人。</p>
+<h3 id="6-_2011年专业线向项目线变革">6. 2011年专业线向项目线变革</h3>
+<p>CDC团队规模达到200多人，在北京、上海、成都都有了自己的分部。团队人数的快速增加很大程度归因于项目的持续增长，以跟上公司快速发展的步伐。数十人和数百人在团队管理上是不同的境界，CDC一直是以专业线划分团队的，在专业建设和质量把控上很好，设计师的专业成长路径清晰，培训体制成熟，但是项目压力传导不到位，效率低下。所以整个部门的组织架构需要艰难地从专业线朝项目线调整。变革需要付出代价，有些设计师非常不适应。同一阶段，人才争夺激烈、猎聘挖角接连不断，2011年整年损失了相当一部分骨干。这也促成了CDC更大胆更快递进行变革。</p>
+<h3 id="7-_作者展望">7. 作者展望</h3>
+<p>不希望CDC继续变大，甚而希望适当缩小，这几年的发展中我们深深认识到：<br>a)一个设计团队的成功，并不在于TA有多大，而在于TA做过多少成功项目；<br>b)只有聚焦，才有精品；<br>c)资源永远都是有限的，用有限的资源把事情做好，才有机会拥有更多的资源把事情做好；<br>d)细致分工在一些阶段是良药，过了这些阶段就是毒药。</p>
+<p>很抱歉，我大段摘抄又小小概述了原文内容。在这个优秀团队的十年成长史中，充满了行业的缩影，团队的工作风格也让人艳羡。“踏踏实实，先把眼前的事情做好。现有资源下做出超预期的事，拿到更多资源之后循环往复。”每一次挑战的顺利渡过都是这个信条的实践。作者没有把这篇文章写成励志史，过于强调个人素质和努力，只是把经验和教训分享出来，读起来自然舒服，又让人敬佩。</p>
+<p><strong>我觉得作者做事上有两种“道”:一种是水到渠成，比如他入职腾讯时机可谓是“恰到好处”，具备了成功的可能性。再比如他谈到周边准备度，就是说构成你周边环境的人、时间、资源是否达到了你可以成事的程度。往往一个人想做成一件事，就好像堆石头上山，费劲力气推到山顶去，倘若山顶的四周空空如也，石头无所立足，会马上滚回原点，所有努力白费。真正需要做到的，是随机应变，在有限的条件下踏踏实实把事情做好。周边准备度，是可以随着不断把事情做成而提升的。另一种是开创精神，比如如何招聘史上第一位交互设计师、如何给设计团队配备界面开发工程师，如何成立第一间用户观察室，如何不同于其他团队拥有向最高决策层汇报的权利，用作者自己的话说，“这是团队特定的成长经历和我们经过长期的努力争取到的一种权利”。</strong></p>
+<p>目前，唐沐已与2013年5月离职腾讯加入小米，又回到了雷军的怀抱。</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>最近在看一本书《在你身边为你设计》，出自腾讯CDC团队（用户研究与体验设计中心）的结集文章。看书如见人，通过不同文章的观点和看问题的角度对各个作者的专业方向和管理层级也略知一二。个人更喜欢唐沐的文章，他是腾讯CDC团队的创始人，给大家缕一下这个团队从无到有的过程。</p>
+]]>
+    </summary>
+    
+      <category term="在你身边为你设计 唐沐 腾讯" scheme="http://yoursite.com/tags/%E5%9C%A8%E4%BD%A0%E8%BA%AB%E8%BE%B9%E4%B8%BA%E4%BD%A0%E8%AE%BE%E8%AE%A1-%E5%94%90%E6%B2%90-%E8%85%BE%E8%AE%AF/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[webapp立方没体诞生之初]]></title>
+    <link href="http://yoursite.com/2014/01/08/h5-webapp/"/>
+    <id>http://yoursite.com/2014/01/08/h5-webapp/</id>
+    <published>2014-01-08T08:18:31.000Z</published>
+    <updated>2014-09-27T08:21:08.000Z</updated>
+    <content type="html"><![CDATA[<p>随着移动设备特别是智能手机的普及，移动应用的市场越发火爆。原生应用以优秀的离线能力、客户端能力（能方便使用手机上的各种终端能力）、高性能、流畅的动画效果大受用户青睐，但仍存在多个系统上的开发、发布、下载使用等瓶颈。而webapp正是为了解决这些不足，同时满足长尾用户的需求。</p>
+<h3 id="1-_准备工作">1. 准备工作</h3>
+<p>在试水立方没体之前，拿登录页面做过实验，在基本不改变设计的情况对web页面结构进行简化或隐藏，注意是对同一套代码进行响应式实现，可想而知，这种方式的结果就如同粗放地减枝，效果不好。当时一直犹豫不决地是使用响应式（兼容各种PC、移动设备）还是为移动设备专门做一套页面结构？显然，前者是完美的，后者是现实的。接着研究了知乎和qzone，恰巧知乎使用的是“完美”方案，而qq空间使用的“现实”方案。鉴于立方网复杂的页面设计，选择后者更明智。</p>
+<h3 id="2-_选择移动框架">2. 选择移动框架</h3>
+<p>网上关于各种移动框架比较的资料很多，sencha Touch 和jquery mobile的大哥地位是毋庸置疑的、但是动辄就是一二百KB让人心中滴血啊，所以更倾向于小巧的框架，方便整合和自开发。Bootstrap号称风格简洁清新，是CSS框架+jquery组件的组合，正好适合我们以jquery为基础的框架结构。</p>
+<p>立方没体的瀑布式布局使用的是我们自开发插件，不需要依赖于其他框架。只借用Bootstrap的CSS部分即可。后来确实遇到了需要借助其他框架的情况，比如单页技术中的页面切换效果。考虑到时间和技术细节，直接使用了jquery mobile的Animated page Transitions部分功能。</p>
+<p>立方没体的webapp v1.0版本已经上线，大体思路是借助各种移动框架（基本都支持自定义build）的特定功能整合成适合我们的方案，如果时间充足的话，也可以将用到的功能再简化、抽离或重写，形成立方的前端框架。</p>
+<h3 id="3-_一半开发、一半设计">3. 一半开发、一半设计</h3>
+<p>不知是不幸还是万幸——没有设计师参与。只是在参考了pinterest、百度、网易，再融入立方设计后，尝试了N套样式，纠结得四分五裂，待某人一拍板“不需要，就这样”之后，才如释重负。立方没体的定位是自媒体，为了保证手机端良好的阅读体验，在字体、字号、间距、行距、圆角、阴影等方面的比较推敲花了很多功夫。</p>
+<h3 id="4-_一半开发、一半数据">4. 一半开发、一半数据</h3>
+<p>用户的访问量是项目持续推进的一大动力，常常在迭代上线之初微涨，过几天又稳落，促使我不停地考虑如何推进，如何保持增势，这种数据导向的优势就是让人自High，自娱自乐。截止目前，移动端访问量占桌面+移动总访问量的19.2%，而20天前是12.01%（其实，桌面web前端也是我负责的，这不是用我的矛戳我的盾嘛）。当然这个数据不可避免得搭乘了移动访问普遍增速的大船。</p>
+<p>至此没有涉及具体代码实现，也没有发现什么技术难点。重要还是设计、创意、体验、细节。<br>附：手机浏览器访问<a href="http://www.l99.com/media" target="_blank" rel="external">www.l99.com/media</a>,欢迎吐槽</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>随着移动设备特别是智能手机的普及，移动应用的市场越发火爆。原生应用以优秀的离线能力、客户端能力（能方便使用手机上的各种终端能力）、高性能、流畅的动画效果大受用户青睐，但仍存在多个系统上的开发、发布、下载使用等瓶颈。而webapp正是为了解决这些不足，同时满足长尾用户的需求。]]>
+    </summary>
+    
+      <category term="响应式 webapp" scheme="http://yoursite.com/tags/%E5%93%8D%E5%BA%94%E5%BC%8F-webapp/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[献给2014年的第一场雪]]></title>
+    <link href="http://yoursite.com/2013/12/12/js-snowflake/"/>
+    <id>http://yoursite.com/2013/12/12/js-snowflake/</id>
+    <published>2013-12-12T08:22:52.000Z</published>
+    <updated>2014-09-27T08:45:24.000Z</updated>
+    <content type="html"><![CDATA[<p>当我查找MVC、MVP、MVVM这些设计模式相关资料时，发现了这个背景效果——飘雪——做得还不错的网站，<a href="http://nirajrules.wordpress.com/2009/07/18/mvc-vs-mvp-vs-mvvm/" target="_blank" rel="external">http://nirajrules.wordpress.com/2009/07/18/mvc-vs-mvp-vs-mvvm/</a>，如果你不能打开链接，就悲剧了，“墙”里难见“墙”外花。于是，从该站点剥离出纯粹实现此动画的代码，制作demo如链接（忙啊！！还没传上去）。</p>
+<p>我们会发现一些细节，鼠标移动的轨迹控制了风向和风速，从而控制雪花的方向和速度；当前tab不是活动tab时动画停止，避免过度绘制。说说你实现该效果的思路，或是关键词。定时器？运动轨迹？边际检测？我们先按照自己的思路一步一步走，再结合它的代码修正。</p>
+<ol>
+<li>制造雪花</li>
+<li>执行定时器</li>
+</ol>
+<p>哦，就这样？好像也很简单~</p>
+<h3 id="1、采用何种模式？">1、采用何种模式？</h3>
+<p>前提是基于原生javascript来考虑，不要受jquery的影响。首先这里不涉及继承，这就简单很多。javascript中最基本又最有用的模式就是单体，用来划分命名空间并将一批相关属性和方法组织在一起，同时也对外提供了一个访问内部属性和方法的访问点。为了避免被外界访问，将单例的“值部分”闭包起来，在内部返回当前活动对象（绑定到this上的属性和方法仍然可以被外部访问）。好，外壳做好了~</p>
+<pre><code>var snowStorm = (<span class="keyword">function</span>(window, document) {
+   <span class="keyword">...</span>
+   <span class="keyword">return</span> this;
+}(window, document));;
+</code></pre><h3 id="2、制造雪花">2、制造雪花</h3>
+<p>如何构造雪花，它的构造函数需要哪些属性？位置坐标必须有，用来记录和控制轨迹？关联DOM对象必须有， 方便设置view相关属性? 它需要哪些方法呢？setPosition（设置位置）？setVelocities（设置速度）？move（移动的入口函数）？根据效果需要可能还需要melt（融化）、stick（堆成雪堆）等。多个雪花实例是随机生成的，运动也互不影响，不必有共享的属性和方法，所以不考虑原型。抽取出的代码结构如下：</p>
+<pre><code><span class="keyword">this</span>.SnowFlake = <span class="function"><span class="keyword">function</span><span class="params">(type,x,y)</span> {</span>
+    <span class="keyword">var</span> s = <span class="keyword">this</span>;
+    <span class="keyword">this</span>.type = type;
+    <span class="keyword">this</span>.x = x||<span class="built_in">parseInt</span>(rnd(screenX-<span class="number">20</span>),<span class="number">10</span>);
+    <span class="keyword">this</span>.y = (!<span class="built_in">isNaN</span>(y)?y:-rnd(screenY)-<span class="number">12</span>);
+    <span class="keyword">this</span>.vX = <span class="literal">null</span>;
+    <span class="keyword">this</span>.vY = <span class="literal">null</span>;
+    <span class="keyword">this</span>.active = <span class="number">1</span>;
+    <span class="keyword">this</span>.fontSize = (<span class="number">10</span>+(<span class="keyword">this</span>.type/<span class="number">5</span>)*<span class="number">10</span>);
+    <span class="keyword">this</span>.o = document.createElement(<span class="string">'div'</span>);
+    <span class="keyword">this</span>.o.innerHTML = storm.snowCharacter;
+    <span class="keyword">this</span>.o.style.color = storm.snowColor;
+    <span class="keyword">this</span>.o.style.position = (fixedForEverything?<span class="string">'fixed'</span>:<span class="string">'absolute'</span>);
+    <span class="keyword">this</span>.o.style.width = storm.flakeWidth+<span class="string">'px'</span>;
+    <span class="keyword">this</span>.o.style.height = storm.flakeHeight+<span class="string">'px'</span>;
+    <span class="keyword">this</span>.o.style.fontFamily = <span class="string">'arial,verdana'</span>;
+    <span class="keyword">this</span>.o.style.cursor = <span class="string">'default'</span>;
+    <span class="keyword">this</span>.o.style.overflow = <span class="string">'hidden'</span>;
+    <span class="keyword">this</span>.o.style.fontWeight = <span class="string">'normal'</span>;
+    <span class="keyword">this</span>.o.style.zIndex = storm.zIndex;
+    docFrag.appendChild(<span class="keyword">this</span>.o);
+
+    <span class="keyword">this</span>.refresh = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+      ......
+      storm.setXY(s.o, s.x, s.y);
+    };
+
+    <span class="keyword">this</span>.vCheck = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+      <span class="keyword">if</span> (s.vX&gt;=<span class="number">0</span> &amp;&amp; s.vX&lt;<span class="number">0.2</span>) {
+        s.vX = <span class="number">0.2</span>;
+      } <span class="keyword">else</span> <span class="keyword">if</span> (s.vX&lt;<span class="number">0</span> &amp;&amp; s.vX&gt;-<span class="number">0.2</span>) {
+        s.vX = -<span class="number">0.2</span>;
+      }
+      <span class="keyword">if</span> (s.vY&gt;=<span class="number">0</span> &amp;&amp; s.vY&lt;<span class="number">0.2</span>) {
+        s.vY = <span class="number">0.2</span>;
+      }
+    };
+
+    <span class="keyword">this</span>.move = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+        ...
+    };
+
+    <span class="keyword">this</span>.setVelocities = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+      s.vX = vRndX+rnd(storm.vMaxX*<span class="number">0.12</span>,<span class="number">0.1</span>);
+      s.vY = vRndY+rnd(storm.vMaxY*<span class="number">0.12</span>,<span class="number">0.1</span>);
+    };
+
+    <span class="keyword">this</span>.setOpacity = <span class="function"><span class="keyword">function</span><span class="params">(o,opacity)</span> {</span>
+      <span class="keyword">if</span> (!opacitySupported) {
+        <span class="keyword">return</span> <span class="literal">false</span>;
+      }
+      o.style.opacity = opacity;
+    };
+
+    <span class="keyword">this</span>.melt = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+      <span class="keyword">if</span> (!storm.useMeltEffect || !s.melting) {
+        s.recycle();
+      } <span class="keyword">else</span> {
+        <span class="keyword">if</span> (s.meltFrame &lt; s.meltFrameCount) {
+          s.setOpacity(s.o,s.meltFrames[s.meltFrame]);
+          s.o.style.fontSize = s.fontSize-(s.fontSize*(s.meltFrame/s.meltFrameCount))+<span class="string">'px'</span>;
+          s.o.style.lineHeight = storm.flakeHeight+<span class="number">2</span>+(storm.flakeHeight*<span class="number">0.75</span>*(s.meltFrame/s.meltFrameCount))+<span class="string">'px'</span>;
+          s.meltFrame++;
+        } <span class="keyword">else</span> {
+          s.recycle();
+        }
+      }
+};
+</code></pre><p>构造函数完成，可以制造雪花，插入到页面了。</p>
+<pre><code>this<span class="preprocessor">.createSnow</span> = function(limit,allowInactive) {
+    var i<span class="comment">;</span>
+    for (i=<span class="number">0</span><span class="comment">; i&lt;limit; i++) {</span>
+      storm<span class="preprocessor">.flakes</span>[storm<span class="preprocessor">.flakes</span><span class="preprocessor">.length</span>] = new storm<span class="preprocessor">.SnowFlake</span>(parseInt(rnd(flakeTypes),<span class="number">10</span>))<span class="comment">;</span>
+      if (allowInactive || i&gt;storm<span class="preprocessor">.flakesMaxActive</span>) {
+        storm<span class="preprocessor">.flakes</span>[storm<span class="preprocessor">.flakes</span><span class="preprocessor">.length</span>-<span class="number">1</span>]<span class="preprocessor">.active</span> = -<span class="number">1</span><span class="comment">;</span>
+      }
+    }
+    storm<span class="preprocessor">.targetElement</span><span class="preprocessor">.appendChild</span>(docFrag)<span class="comment">;</span>
+}<span class="comment">;</span>
+</code></pre><p>关于move方法的实现，也就是移动轨迹相关的细节，我曾一度想了解动画原理，仔细分析下这个方法：</p>
+<pre><code><span class="keyword">this</span>.move = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+    <span class="comment">// rnd: 返回[param2,param1)之间的随机数</span>
+    <span class="comment">// plusMinus: 以相同概率返回±param</span>
+    <span class="comment">// storm.vMaxX=2.5：水平方向最大速度</span>
+    <span class="comment">// 水平风速vRndX = plusMinus(rnd(storm.vMaxX,0.2)); --from randomizeWind（）</span>
+    <span class="comment">// vRndX∈±[0.2,2.5)</span>
+    <span class="comment">// 水平速度s.vX = vRndX+rnd(storm.vMaxX*0.12,0.1) –-from setVelocities（）</span>
+    <span class="comment">// s.vX = ±[0.2,2.5) + [0.1,2.5*0.12);</span>
+    <span class="comment">// 水平速度≠水平风速？为什么要修正[0.1,2.5*0.12)，0.12是怎么来的？</span>
+    <span class="comment">// 风偏速windOffset默认为1，并根据鼠标移动的位置计算。处于屏幕中间为0，最左侧为-2，最右侧为2；windOffset∈[-2,2]</span>
+    <span class="keyword">var</span> vX = s.vX*windOffset, yDiff;
+    <span class="comment">// 单位时间运动的终点值=初始值+水平速度</span>
+    s.x += vX;
+    <span class="comment">// 同理s.vX = [0.2,2.5) + [0.1,2.5*0.12);</span>
+    <span class="comment">// 之前忽略了一点，雪花和雪花是不一样的。尤其是轻重不同，那下落速度必定不同。</span>
+    <span class="comment">// this.vAmpTypes = [1,1.2,1.4,1.6,1.8];</span>
+    <span class="comment">// this.type ∈[0,5)的随机整数</span>
+    <span class="comment">// this.vAmp = this.vAmpTypes[this.type];</span>
+    s.y += (s.vY*s.vAmp);
+    <span class="comment">// 边际检测</span>
+    <span class="comment">// 右侧出屏幕，设置到左边,左侧出屏幕，设置到右边</span>
+    <span class="keyword">if</span> (s.x &gt;= screenX || screenX-s.x &lt; storm.flakeWidth) { <span class="comment">// X-axis scroll check</span>
+    s.x = <span class="number">0</span>;
+    } <span class="keyword">else</span> <span class="keyword">if</span> (vX &lt; <span class="number">0</span> &amp;&amp; s.x-storm.flakeLeftOffset &lt; -storm.flakeWidth) {
+    s.x = screenX-storm.flakeWidth-<span class="number">1</span>; <span class="comment">// flakeWidth;</span>
+    }
+    <span class="comment">// 设置到页面中</span>
+    s.refresh();
+    <span class="comment">// yDiff 当前雪花位置距离屏幕底部的高度</span>
+    <span class="comment">// 以下实现雪花是否成堆、融化的效果，不再赘述</span>
+    yDiff = screenY+scrollY-s.y+storm.flakeHeight;
+    <span class="keyword">if</span> (yDiff&lt;storm.flakeHeight) {
+        s.active = <span class="number">0</span>;
+        <span class="keyword">if</span> (storm.snowStick) {
+          s.stick();
+        } <span class="keyword">else</span> {
+          s.recycle();
+        }
+    } <span class="keyword">else</span> {
+        <span class="keyword">if</span> (storm.useMeltEffect &amp;&amp; s.active &amp;&amp; s.type &lt; <span class="number">3</span> &amp;&amp; !s.melting &amp;&amp; <span class="built_in">Math</span>.random()&gt;<span class="number">0.998</span>) {
+          <span class="comment">// ~1/1000 chance of melting mid-air, with each frame</span>
+          s.melting = <span class="literal">true</span>;
+          s.melt();
+          <span class="comment">// only incrementally melt one frame</span>
+          <span class="comment">// s.melting = false;</span>
+        }
+        <span class="keyword">if</span> (storm.useTwinkleEffect) {
+          <span class="keyword">if</span> (s.twinkleFrame &lt; <span class="number">0</span>) {
+            <span class="keyword">if</span> (<span class="built_in">Math</span>.random() &gt; <span class="number">0.97</span>) {
+              s.twinkleFrame = <span class="built_in">parseInt</span>(<span class="built_in">Math</span>.random() * <span class="number">8</span>, <span class="number">10</span>);
+            }
+          } <span class="keyword">else</span> {
+            s.twinkleFrame--;
+            <span class="keyword">if</span> (!opacitySupported) {
+              s.o.style.visibility = (s.twinkleFrame &amp;&amp; s.twinkleFrame % <span class="number">2</span> === <span class="number">0</span> ? <span class="string">'hidden'</span> : <span class="string">'visible'</span>);
+            } <span class="keyword">else</span> {
+              s.o.style.opacity = (s.twinkleFrame &amp;&amp; s.twinkleFrame % <span class="number">2</span> === <span class="number">0</span> ? <span class="number">0</span> : <span class="number">1</span>);
+            }
+          }
+        }
+    }
+};
+</code></pre><h3 id="3、执行定时器ergrg">3、执行定时器ergrg</h3>
+<p>那么，遍历所有的雪花，让她们飘去吧。要么setInterval、要么递归调用setTimeout。</p>
+<pre><code><span class="transposed_variable">this.</span>snow = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+    var active = <span class="number">0</span>, flake = null, <span class="built_in">i</span>, <span class="built_in">j</span>;
+    <span class="keyword">for</span> (<span class="built_in">i</span>=<span class="number">0</span>, <span class="built_in">j</span>=<span class="transposed_variable">storm.</span><span class="transposed_variable">flakes.</span><span class="built_in">length</span>; <span class="built_in">i</span>&lt;<span class="built_in">j</span>; <span class="built_in">i</span>++) <span class="cell">{
+      if (storm.flakes[i].active === <span class="number">1</span>) {
+        storm.flakes[i].move();
+        active++;
+      }</span>
+      <span class="keyword">if</span> (<span class="transposed_variable">storm.</span>flakes<span class="matrix">[i].</span>melting) <span class="cell">{
+        storm.flakes[i].melt();
+      }</span>
+    }
+    ……
+    <span class="keyword">if</span> (<span class="transposed_variable">storm.</span>timer) <span class="cell">{
+      features.getAnimationFrame(storm.snow);
+    }</span>                
+};
+</code></pre><p>这里引入了一个新的专业名词“requestAnimationFrame”。</p>
+<p>我们知道，setInterval、setTimeout在实现动画的流畅性上总是不理想。动画比较棘手的问题是延迟应该多少，一方面要必须短，从而使动画流畅地进行，另一方面还要足够长，使得浏览器可以完成渲染。大多数浏览器的刷新频率为60Hz，即每秒60次刷新，那流畅动画的最佳间隔是1000ms/60约为17ms。其次的问题是无法精确，第二个参数指定的延迟表示代码何时会添加到浏览器的UI线程队列中。如果UI线程处于繁忙状态，那代码不会被马上执行。再次，即使看不到网页，或是处于背景选项卡中的页面，动画都会频繁出现，导致过度绘制。</p>
+<p>实际上，CSS transitions 和 animations的动画都非常平滑，优势在于浏览器知道哪些动画将会发生。而javascript动画，浏览器不知道动画正在发生。所以一个独特的方案就是创建一个requestAnimationFrame（）方法来告诉浏览器哪些javascript代码正在执行，而计时由系统处理，与浏览器的绘制时间间隔保持一致。此方法接受一个参数，是一个动画函数，并需要在函数最后再次调用requestAnimationFrame（）方法。</p>
+<p>requestAnimationFrame（）API是W3C起草的一个新议案，目前chrome10+、firefox 4+、IE10+已支持。上述代码中getAnimationFrame方法针对不同浏览器对requestAnimationFrame进行了封装，的实现如下：</p>
+<pre><code><span class="reserved">function</span> timeoutShim(callback) {
+    <span class="built_in">window</span>.setTimeout(callback, <span class="number">1000</span>/(storm.animationInterval || <span class="number">20</span>));
+}
+
+<span class="reserved">var</span> _animationFrame = (<span class="built_in">window</span>.requestAnimationFrame ||
+    <span class="built_in">window</span>.webkitRequestAnimationFrame ||
+    <span class="built_in">window</span>.mozRequestAnimationFrame ||
+    <span class="built_in">window</span>.oRequestAnimationFrame ||
+    <span class="built_in">window</span>.msRequestAnimationFrame ||
+    timeoutShim);
+
+<span class="regexp">//</span> apply to <span class="built_in">window</span>, avoid <span class="string">"illegal invocation"</span> errors <span class="keyword">in</span> Chrome
+getAnimationFrame = _animationFrame ? <span class="reserved">function</span>() {
+    <span class="keyword">return</span> _animationFrame.apply(<span class="built_in">window</span>, arguments);
+} : <span class="literal">null</span>;
+</code></pre><p>最后，总结一下代码结构如下：<br><img src="/img/snowflake.png" alt="雅虎科技"></p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>当我查找MVC、MVP、MVVM这些设计模式相关资料时，发现了这个背景效果——飘雪——做得还不错的网站，<a href="http://nirajrules.wordpress.com/2009/07/18/mvc-vs-mvp-vs-mvvm/" target="_bla]]>
+    </summary>
+    
+      <category term="js动画 css3 requestAnimationFrame 雪花动画" scheme="http://yoursite.com/tags/js%E5%8A%A8%E7%94%BB-css3-requestAnimationFrame-%E9%9B%AA%E8%8A%B1%E5%8A%A8%E7%94%BB/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[跨域请求如何破]]></title>
+    <link href="http://yoursite.com/2013/11/29/js-crossdomain/"/>
+    <id>http://yoursite.com/2013/11/29/js-crossdomain/</id>
+    <published>2013-11-29T08:46:33.000Z</published>
+    <updated>2014-09-27T11:48:09.000Z</updated>
+    <content type="html"><![CDATA[<p>近日，前端在尝试跨域请求API，接受纯粹的JSON数据，绕过后端大婶们，他们总是这个不能做，那个影响性能。但是，请求一开始就报错，跨域总是这么屌，轻易让你搞定，就不是他的范儿。<br>先看一下错误信息：</p>
+<p>Chrome：Uncaught SyntaxError: Unexpected token :</p>
+<p>Firefox：<img src="/img/crossdomain1.png" alt="跨域请求"></p>
+<p>代码：</p>
+<pre><code>$.ajax({
+        async: <span class="literal">true</span>,
+        url: <span class="string">'http://dbapi.xy.l99.com/dovebox/pintimes/mediatype'</span>,
+        dataType: <span class="string">'jsonp'</span>,
+        data:{media_type: <span class="number">0</span>, limit: <span class="number">20</span>},
+        method: <span class="string">"GET"</span>,
+        error: <span class="function"><span class="keyword">function</span> <span class="params">(jqXHR, textStatus, errorThrown)</span>{</span>
+              <span class="comment">//……;</span>
+        },
+        success: <span class="function"><span class="keyword">function</span> <span class="params">(data, textStatus, jqXHR)</span> {</span>
+               <span class="comment">//……;</span>
+        }
+});
+</code></pre><p>从Firefox的错误信息来看，是数据格式的问题，而返回的JSON数据肯定不存在问题。根据stackoverflow上的说法把dataType从“jsonp”替换成“json”，或在url后面加上callback=?等等都不能解决。我想到的种种错误可能都不是，那肯定是后端的问题了。但是，这个理由是不能拿出去跟后端程序员说的，除非告诉他错误在哪，继续调查下。</p>
+<p>我们知道，跨域请求本质上并不是ajax，而是创建了script标签，将请求地址赋给src，因为script标签可以无条件执行，不受限于同源策略。于是，尝试在页面上增加：</p>
+<pre><code><span class="tag">&lt;<span class="title">script</span> <span class="attribute">type</span>=<span class="value">"text/javascript"</span> <span class="attribute">src</span>=<span class="value">"http://dbapi.xy.l99.com/dovebox/pintimes/mediatype"</span> &gt;</span><span class="javascript"></span><span class="tag">&lt;/<span class="title">script</span>&gt;</span>
+</code></pre><p>猜猜结果如何？</p>
+<p>报了同样的错误信息，不难得知，浏览器加载了这个假的“js文件”，但是执行的时候发现这段代码并不符合js语法，所以报了以上错误。</p>
+<p>回到跨域请求的本质上来，后端在返回数据时需要在数据外层包装一个函数，函数名由前端传递，默认是jquery+随机数。包装函数的目的一方面是使其符合js语法，另一方面是将数据以参数形式传递过来，方便获取。除了包装函数，还有其他办法吗？把数据赋给一个变量岂不是更方便？有机会可以再实现一下跨域请求。</p>
+<p>那到底是不是后端未处理的原因？我们用fiddler模拟返回数据看看。</p>
+<pre><code>$.ajax({
+        async: <span class="literal">true</span>,
+        url: <span class="string">'http://dbapi.xy.l99.com/dovebox/pintimes/mediatype'</span>,
+        dataType: <span class="string">'jsonp'</span>,
+        jsonpCallback: <span class="string">"aa"</span>, 
+        data:{media_type: <span class="number">0</span>, limit: <span class="number">20</span>},
+        method: <span class="string">"GET"</span>,
+        error: <span class="function"><span class="keyword">function</span> <span class="params">(jqXHR, textStatus, errorThrown)</span>{</span>
+              <span class="comment">//……;</span>
+        },
+        success: <span class="function"><span class="keyword">function</span> <span class="params">(data, textStatus, jqXHR)</span> {</span>
+               <span class="comment">//……;</span>
+        }
+});
+</code></pre><p>由于在请求中添加callback=?会导致函数名随机生成，不易控制，所以自定义一个：jsonpCallback: “aa”,</p>
+<p>在fiddler中设置规则，当请求某个URL时，返回本地数据（特别增加了函数包装）。</p>
+<pre><code>aa({<span class="string">"status"</span>:<span class="string">"1"</span>,<span class="string">"code"</span>:<span class="string">"200"</span>,<span class="string">"data"</span>:{<span class="attribute">...</span><span class="attribute">...</span>}});
+</code></pre><p><img src="/img/crossdomain1.png" alt="跨域请求"><br>果然，一切搞定。API啊，API，你竟然不支持跨域请求？？？！！！！</p>
+<p>最后，我们还是从jquery源码中走一下跨域请求的流程~~<br>请求入口：</p>
+<pre><code>transport.send( requestHeaders, done );
+<span class="regexp">//</span> requestHeaders <span class="symbol">:<span class="string">"{"</span>Accept<span class="string">":"</span>text</span>, text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, *<span class="regexp">/*; q=0.01"}"</span>
+</code></pre><p>发送请求的本质：</p>
+<pre><code><span class="label">send:</span> function( _, callback ) {
+    script = document<span class="preprocessor">.createElement</span>(<span class="string">"script"</span>)<span class="comment">;</span>
+    script<span class="preprocessor">.async</span> = true<span class="comment">;</span>
+    if ( s<span class="preprocessor">.scriptCharset</span> ) {
+        script<span class="preprocessor">.charset</span> = s<span class="preprocessor">.scriptCharset</span><span class="comment">;</span>
+    }
+    script<span class="preprocessor">.src</span> = s<span class="preprocessor">.url</span><span class="comment">;</span>
+    // Attach handlers for all browsers
+    script<span class="preprocessor">.onload</span> = script<span class="preprocessor">.onreadystatechange</span> = function( _, isAbort ) {                    
+        if ( isAbort || !script<span class="preprocessor">.readyState</span> || /loaded|complete/<span class="preprocessor">.test</span>( script<span class="preprocessor">.readyState</span> ) ) {
+            // Handle memory leak <span class="keyword">in</span> IE
+            script<span class="preprocessor">.onload</span> = script<span class="preprocessor">.onreadystatechange</span> = null<span class="comment">;</span>
+            // Remove the script
+            if ( script<span class="preprocessor">.parentNode</span> ) {
+                script<span class="preprocessor">.parentNode</span><span class="preprocessor">.removeChild</span>( script )<span class="comment">;</span>
+            }
+            alert(script<span class="preprocessor">.innerHTML</span>)<span class="comment">;</span>
+            // Dereference the script
+            script = null<span class="comment">;</span>
+            // Callback if not abort
+            if ( !isAbort ) {
+                callback( <span class="number">200</span>, <span class="string">"success"</span> )<span class="comment">;</span>
+            }
+        }
+    }<span class="comment">;</span>
+    // Circumvent IE6 bugs with base elements (<span class="preprocessor">#2709 and #4378) by prepending</span>
+    // Use native DOM manipulation to avoid our domManip AJAX trickery
+    head<span class="preprocessor">.insertBefore</span>( script, head<span class="preprocessor">.firstChild</span> )<span class="comment">;</span>
+}
+</code></pre><p>执行js代码：</p>
+<pre><code>window[ callbackName ] = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+    responseContainer = <span class="built_in">arguments</span>;
+};
+</code></pre><p>预先注册了window[“aa”] = function(){};当假的js加载后立即执行此函数，将参数保存到变量responseContainer中。然后进入onload回调函数，后续会将responseContainer返回给response对象，以及错误处理等等。</p>
+<p>结论：出现文章开头的错误信息，是由于后端没有做跨域处理（这句话是给看了开头直接看结尾的人的）。</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>近日，前端在尝试跨域请求API，接受纯粹的JSON数据，绕过后端大婶们，他们总是这个不能做，那个影响性能。但是，请求一开始就报错，跨域总是这么屌，轻易让你搞定，就不是他的范儿。<br>先看一下错误信息：</p>
+<p>Chrome：Uncaught SyntaxError:]]>
+    </summary>
+    
+      <category term="跨域 jquery跨域" scheme="http://yoursite.com/tags/%E8%B7%A8%E5%9F%9F-jquery%E8%B7%A8%E5%9F%9F/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[无缝滚动能有多麻烦]]></title>
+    <link href="http://yoursite.com/2013/11/23/js-marquee/"/>
+    <id>http://yoursite.com/2013/11/23/js-marquee/</id>
+    <published>2013-11-23T11:49:49.000Z</published>
+    <updated>2014-09-27T11:59:36.000Z</updated>
+    <content type="html"><![CDATA[<p>实现无缝滚动是前端的必备技能，每次实现也都是小打小闹，这次是在N1、N2、N3的条件下实现，下次在N2、N3、N4的条件下实现，套路大同小异。近期做了个内容动态加载、图文混排的无缝滚动，比以前多了些看点，遂由浅入深，一一道来。</p>
+<h3 id="一、marquee标记">一、marquee标记</h3>
+<pre><code><span class="tag">&lt;<span class="title">marqueen</span>&gt;</span>标记可以实现文字滚动，但是不能实现无缝滚动。
+<span class="tag">&lt;<span class="title">marquee</span> <span class="attribute">direction</span>=<span class="value">left</span> <span class="attribute">scrollamount</span>=<span class="value">2</span> <span class="attribute">onmouseover</span>=<span class="value">"this.stop();"</span> 
+<span class="attribute">onmouseout</span>=<span class="value">"this.start();"</span> <span class="attribute">width</span>=<span class="value">100</span> <span class="attribute">height</span>=<span class="value">100</span>&gt;</span>
+    中文为什么就不行
+<span class="tag">&lt;/<span class="title">marquee</span>&gt;</span>
+</code></pre><p>Direction设置活动字幕的滚动方向，scrollamount设置文字的滚动速度。<br>onMouseOut=”this.start()” ：用来设置鼠标移出该区域时继续滚动<br>onMouseOver=”this.stop()”：用来设置鼠标移入该区域时停止滚动<br>behavior设置滚动方式，align设置对齐方式等，属性很多，但是致命伤是不能实现无缝滚动。</p>
+<h3 id="二、JS障眼法">二、JS障眼法</h3>
+<p>仍然以横向滚动为例，通常情况下，显示范围的宽度肯定小于内容的宽度，才有滚动显示的必要。红色框为内容显示框。为了使滚动文字的首尾相接，要使用两个放有相同内容的div。<br><img src="/img/marquee1.png" alt="跨域请求"></p>
+<p>红色框固定不动，每次当第二个div内容滚动到末尾时，要模拟成第一个div滚动到末尾的情况，这样，第二个div就可以无缝跟上。<br><img src="/img/marquee2.png" alt="跨域请求"></p>
+<p>模拟成：</p>
+<p><img src="/img/marquee3.png" alt="跨域请求"></p>
+<p>结构代码：</p>
+<pre><code>&lt;<span class="keyword">div</span> <span class="property">id</span>=<span class="string">"dvvv"</span> style=<span class="string">"overflow:hidden;height:27px;width:100px;
+                      border:1px solid red;white-space:nowrap"</span>&gt;
+        &lt;<span class="keyword">div</span> <span class="property">id</span>=<span class="string">"dvvv1"</span> style=<span class="string">"display:inline"</span>&gt;实现文字无缝滚动。&lt;/<span class="keyword">div</span>&gt;
+        &lt;<span class="keyword">div</span> <span class="property">id</span>=<span class="string">"dvvv2"</span> style=<span class="string">"display:inline"</span>&gt;&lt;/<span class="keyword">div</span>&gt;
+&lt;/<span class="keyword">div</span>&gt;
+</code></pre><p>JS代码：</p>
+<pre><code><span class="keyword">var</span> interval=<span class="number">30</span>;
+<span class="keyword">var</span> <span class="variable">$dvvv</span> = document.getElementById(<span class="string">"dvvv"</span>);
+<span class="keyword">var</span> <span class="variable">$dvvv1</span> = document.getElementById(<span class="string">"dvvv1"</span>);
+<span class="keyword">var</span> <span class="variable">$dvvv2</span> = document.getElementById(<span class="string">"dvvv2"</span>);   
+<span class="comment">//内容复制</span>
+<span class="variable">$dvvv2</span>.innerHTML = <span class="variable">$dvvv1</span>.innerHTM;
+<span class="function"><span class="keyword">function</span> <span class="title">Marqpuee</span><span class="params">()</span>{</span>
+    <span class="comment">//此时滚动到第二个div的末尾处，100为显示宽度</span>
+    <span class="keyword">if</span>(<span class="variable">$dvvv</span>.scrollLeft &gt;= <span class="number">2</span> * <span class="variable">$dvvv1</span>.offsetWidth - <span class="number">100</span> ){ 
+<span class="comment">//障眼法来啦！！模拟成第一个div滚到到末尾处。瞬间发生，人眼不太能感受到这种变化</span>
+<span class="variable">$dvvv</span>.scrollLeft = <span class="variable">$dvvv1</span>.offsetWidth - <span class="number">100</span>;
+    }
+     <span class="keyword">else</span>{  
+        <span class="variable">$dvvv</span>.scrollLeft++;
+     }
+}
+<span class="keyword">var</span> MyMar = setInterval(Marqpuee,  interval);
+</code></pre><h3 id="三、实战">三、实战</h3>
+<p>前面都是热身，这时来了一个实时新闻页面，要求向下滚动播放，并不时从后台推送新的战况，如下：<br><img src="/img/marquee4.png" alt="跨域请求"></p>
+<h4 id="1、稍微复杂的图文混排新闻块如何进行DOM拷贝实现障眼法？">1、稍微复杂的图文混排新闻块如何进行DOM拷贝实现障眼法？</h4>
+<p>假设，页面中固定显示区域为10个block，那初始加载可能为20个block，那如果将20个block都进行DOM拷贝，无疑给页面增大了负荷。那么，我们可以只拷贝前10个block，等待20个block都滚动一遍之后，并没有新的数据载入时，继续滚动这10个拷贝，留出时间让前20个block复位。<br><img src="/img/marquee5.png" alt="跨域请求"><br>初始化<br><img src="/img/marquee6.png" alt="跨域请求"><br>滚动到拷贝数据，复位</p>
+<h4 id="2、如何在不刷新页面的情况下，显示后台推送的新闻？（前端可以设置定时器，定时请求新数据）">2、如何在不刷新页面的情况下，显示后台推送的新闻？（前端可以设置定时器，定时请求新数据）</h4>
+<p>考虑一下，新数据应该插在什么位置？显然，拷贝数据是每一轮滚动结束后才显示，以供原始数据复位，那么新数据应该插在拷贝数据之前。又有新问题了，如果刚好滚动到拷贝数据，那用户肯定能看到新数据的插入，页面就不平滑了。所以插入要寻找时机，插入点一定处于可视区域之外：</p>
+<pre><code><span class="comment">// scrollNum:底部滚出数</span>
+<span class="comment">// sum:总数量，包括拷贝数</span>
+<span class="comment">// visibleNum = bakNum:可视数=拷贝数</span>
+<span class="keyword">if</span>(scrollNum &lt; <span class="built_in">sum</span> - visibleNum * <span class="number">2</span>){
+    <span class="comment">//append html</span>
+}
+<span class="keyword">else</span>{
+    setTimeout(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+            <span class="comment">//append html;s</span>
+    },<span class="transposed_variable">marqueeTimer.</span>interval * visibleNum)
+}
+</code></pre><p>当插入点处于可视区域时，等待拷贝数据滚动完成之后再插入。但要考虑拷贝数据滚动完成所需时间内，没有新的数据推送到前端。否则，需要增加缓冲池缓存数据。</p>
+<h4 id="3、每次插入数据后，还要及时修正容器的scrollTop或margin-top，保证不跳动。">3、每次插入数据后，还要及时修正容器的scrollTop或margin-top，保证不跳动。</h4>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>实现无缝滚动是前端的必备技能，每次实现也都是小打小闹，这次是在N1、N2、N3的条件下实现，下次在N2、N3、N4的条件下实现，套路大同小异。近期做了个内容动态加载、图文混排的无缝滚动，比以前多了些看点，遂由浅入深，一一道来。</p>
+<h3 id="一、marquee标记]]>
+    </summary>
+    
+      <category term="无缝滚动 marquee" scheme="http://yoursite.com/tags/%E6%97%A0%E7%BC%9D%E6%BB%9A%E5%8A%A8-marquee/"/>
+    
+  </entry>
+  
+</feed>

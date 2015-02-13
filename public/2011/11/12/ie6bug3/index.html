@@ -1,0 +1,40 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>IE6兼容性专题三——经典的内容复制bug&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>IE6兼容性专题三——经典的内容复制bug</h2><div class="meta">Nov 12 2011</div><h2 id="举例1:_IE6注释bug">举例1: IE6注释bug</h2>
+<p>几个相连的浮动元素中间插入一段html注释代码，就会将最后一个容器中的最后几个字符复制到容器之外显示出来。俗称“IE6注释bug”。如果添加更多条的注释，会继续余出更多字符。</p>
+<p><img src="/img/ie6bug31.png" alt="内容复制bug"></p>
+<p>结构代码</p>
+<pre><code><span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"left"</span>&gt;</span>浮动元素1<span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+<span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"left"</span>&gt;</span>浮动元素2<span class="tag">&lt;/<span class="title">div</span>&gt;</span><span class="comment">&lt;!--注释--&gt;</span>
+<span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"left"</span>&gt;</span>浮动元素3<span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+<span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"left"</span>&gt;</span>浮动元素4<span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+</code></pre><p>解决方案：去掉注释语句。</p>
+<h2 id="举例2：流浪在外的“应”">举例2：流浪在外的“应”</h2>
+<p>图1：<br><img src="/img/ie6bug32.png" alt="内容复制bug"></p>
+<p>图2：<br><img src="/img/ie6bug33.png" alt="内容复制bug"></p>
+<p>图3：<br><img src="/img/ie6bug34.png" alt="内容复制bug"></p>
+<p>图1结构代码：</p>
+<pre><code><span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"tml_postcontrol"</span> <span class="attribute">style</span>=<span class="value">”float:right;</span> <span class="attribute">width:300px</span>;”&gt;</span>
+    <span class="tag">&lt;<span class="title">input</span> <span class="attribute">type</span>=<span class="value">"image"</span> <span class="attribute">alt</span>=<span class="value">"如果您喜欢这条飞鸽，请点亮这颗心。"</span> <span class="attribute">class</span>=<span class="value">”right</span> <span class="attribute">ml15</span>” <span class="attribute">src</span>=<span class="value">”#”</span> /&gt;</span>
+     <span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">"#"</span> <span class="attribute">class</span>=<span class="value">”right</span> <span class="attribute">ml15</span>”&gt;</span>回复<span class="tag">&lt;/<span class="title">a</span>&gt;</span>
+     <span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">"#"</span> <span class="attribute">class</span>=<span class="value">”right</span> <span class="attribute">ml15</span>”&gt;</span>重飞<span class="tag">&lt;/<span class="title">a</span>&gt;</span>
+     <span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">"#"</span> <span class="attribute">class</span>=<span class="value">”right</span> <span class="attribute">ml15</span>”&gt;</span>收藏<span class="tag">&lt;/<span class="title">a</span>&gt;</span>
+     <span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">"#"</span> <span class="attribute">class</span>=<span class="value">”right</span> <span class="attribute">ml15</span>”&gt;</span>
+         <span class="tag">&lt;<span class="title">span</span> <span class="attribute">class</span>=<span class="value">”right”</span>&gt;</span>0条回应<span class="tag">&lt;/<span class="title">span</span>&gt;</span>
+     <span class="tag">&lt;/<span class="title">a</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+</code></pre><p>为了方便分析，特别给每个部分加上边框。可以看到，图1多出了一个莫名其妙的“应”，并且不属于任何一个部分。图2少了一项内容，显示正常。图3增加了一项内容，多出来两个字“回应”。</p>
+<p>解决方案1：<strong>由于每个部分都是右浮动，很容易想到可能是没有设置width引起的，尽管图中对没有width的浮动元素的宽度渲染的很好，尽管图2也没有width仍然显示正常。但是，给“回应”的标签设置<code>{_width:100px;}</code>的确解决了问题。</strong></p>
+<p>解决方案2：<strong>“0条回应”外有和两层标签，而且都是右浮动。这个结构很有意思，它会导致每增加一个浮动项目都会多出来一个字。删掉或的右浮动可以解决。或者在任意个右浮动项目中外套div(除<code>&lt;span&gt;</code>外)。</strong></p>
+<h2 id="举例3：多出一行的”立方偷袭”">举例3：多出一行的”立方偷袭”</h2>
+<p><img src="/img/ie6bug35.png" alt="内容复制bug"></p>
+<p>结构代码：</p>
+<pre><code><span class="tag">&lt;<span class="title">div</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">"#"</span> <span class="attribute">class</span>=<span class="value">”left”</span>&gt;</span>第九维<span class="tag">&lt;<span class="title">a</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">"#"</span> <span class="attribute">class</span>=<span class="value">”left”</span>&gt;</span>头像买卖<span class="tag">&lt;<span class="title">a</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">"#"</span> <span class="attribute">class</span>=<span class="value">”left”</span>&gt;</span>礼尚往来<span class="tag">&lt;<span class="title">a</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">"#"</span> <span class="attribute">class</span>=<span class="value">”left”</span>&gt;</span>立方PK<span class="tag">&lt;<span class="title">a</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">"#"</span> <span class="attribute">class</span>=<span class="value">”left”</span>&gt;</span>心理测试<span class="tag">&lt;<span class="title">a</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">a</span> <span class="attribute">href</span>=<span class="value">"#"</span> <span class="attribute">class</span>=<span class="value">”left”</span> <span class="attribute">style</span>=<span class="value">”margin-right:-3px;”</span>&gt;</span>立方偷袭<span class="tag">&lt;<span class="title">a</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+</code></pre><p>解决方案：在最后一个浮动元素中添加负边距样式。</p>
+<p>结语：无语，莫名其妙，变态</p>
+</article><nav id="article-pagination"><a href="/2011/11/15/ie6bug4/" title="Previous article: IE6兼容性专题四——div元素不能覆盖select元素" class="prev">&larr; Previous article</a><a href="/2011/11/10/ie6bug2/" title="Next article: IE6兼容性专题二——消失的绝对定位" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>移动端浏览器下页面制作规范&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>移动端浏览器下页面制作规范</h2><div class="meta">Mar 1 2014</div><h2 id="要求：">要求：</h2>
+<p>兼容各种分辨率下的iPhone和Android设备。</p>
+<h2 id="要点：">要点：</h2>
+<h3 id="1-_视口viewport">1. 视口viewport</h3>
+<p>头部声明与其他页面一致，使用HTML5的写法&lt;!DOCTYPE html&gt;，但需要在head中增加一行：</p>
+<pre><code><span class="tag">&lt;<span class="title">meta</span> <span class="attribute">name</span>=<span class="value">"viewport"</span> <span class="attribute">content</span>=<span class="value">"width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"</span>&gt;</span>
+</code></pre><p>此处width不要固定宽度，不要后端传值，使用设备宽度即可，并且不允许缩放，以避免页面出现横向滚动条。</p>
+<h3 id="2-_尺寸设置">2. 尺寸设置</h3>
+<p>一般情况下，设计师提供的是适配iphone尺寸的设计图，通常为640*960，但是iPhone4+在解析网页的时候依旧把自己当作一台横向分辨率为320px的设备，所以针对设计图中标识的横向尺寸按比例缩小，纵向尺寸不变，字体大小减小到2/3，背景图按比例缩小，背景图不能拼接。 尽量不使用固定宽度，使用百分比无法除尽时可以精确到小数点后七位，基本保证无误差。若使用固定宽度，请放在媒体查询中：</p>
+<pre><code>@media screen <span class="literal">and</span> (<span class="keyword">min</span><span class="attribute">-width</span>: <span class="number">320</span>px){}
+@media screen <span class="literal">and</span> (<span class="keyword">min</span><span class="attribute">-width</span>: <span class="number">480</span>px){}
+@media screen <span class="literal">and</span> (<span class="keyword">min</span><span class="attribute">-width</span>: <span class="number">640</span>px){}
+</code></pre><p>注意使用min-width，而不是min -device-width。</p>
+<h3 id="3-_从桌面端向下设计VS从移动端向上设计">3. 从桌面端向下设计VS从移动端向上设计</h3>
+<p>注意媒体查询的顺序。<br>从桌面端向下设计：</p>
+<pre><code>@media screen <span class="literal">and</span> (<span class="keyword">min</span><span class="attribute">-width</span>: <span class="number">640</span>px){}
+@media screen <span class="literal">and</span> (<span class="keyword">max</span><span class="attribute">-width</span>: <span class="number">640</span>px){}
+@media screen <span class="literal">and</span> (<span class="keyword">max</span><span class="attribute">-width</span>: <span class="number">480</span>px){}
+@media screen <span class="literal">and</span> (<span class="keyword">max</span><span class="attribute">-width</span>: <span class="number">320</span>px){}
+</code></pre><p>从移动端向上设计：</p>
+<pre><code>@media screen <span class="literal">and</span> (<span class="keyword">min</span><span class="attribute">-width</span>: <span class="number">320</span>px){}
+@media screen <span class="literal">and</span> (<span class="keyword">min</span><span class="attribute">-width</span>: <span class="number">480</span>px){}
+@media screen <span class="literal">and</span> (<span class="keyword">min</span><span class="attribute">-width</span>: <span class="number">640</span>px){}
+</code></pre><p>推荐使用<strong>从移动端向上设计</strong>，所需的CSS代码更少，代码结构更加清晰。</p>
+<h3 id="4-_浏览器模拟测试">4. 浏览器模拟测试</h3>
+<p>测试时Chrome的UA配置如下：</p>
+<p><img src="/img/h5specs.png" alt="移动APP制作规范"></p>
+<h3 id="5-_改变盒模型">5. 改变盒模型</h3>
+<p>标准盒模型下width属性只是内容的宽度，在响应式设计中大部分width均为百分比，如果再设置padding和border会导致内容溢出或换行，所以通常在CSS顶级样式中加入：</p>
+<pre><code>*, *<span class="pseudo">:before</span>, *<span class="pseudo">:after</span> <span class="rules">{<span class="rule"><span class="attribute">-webkit-box-sizing</span>:<span class="value">border-box</span></span>;<span class="rule"><span class="attribute">-moz-box-sizing</span>:<span class="value">border-box</span></span>;<span class="rule"><span class="attribute">box-sizing</span>:<span class="value">border-box</span></span>;<span class="rule">}</span></span>，
+</code></pre><p>使width属性包含padding和border。</p>
+<h3 id="6-_手机端测试">6. 手机端测试</h3>
+<p>①可将静态页面放置本地目录下:</p>
+<pre><code>C:<span class="command">\Program</span> Files (x86)<span class="command">\Apache</span> Software Foundation<span class="command">\Apache</span>2.2<span class="command">\htdocs</span>
+</code></pre><p>打开手机浏览器访问：</p>
+<pre><code><span class="label">http:</span>//<span class="number">192.168</span><span class="number">.50</span><span class="number">.241</span>/m/cbs-download<span class="preprocessor">.html</span>(本机ip+项目目录)
+</code></pre><p>②若访问本地java项目如lifeix-web中的页面，可手动修改手机上的HTTP代理，服务器为本机ip，端口为80，打开手机浏览器通过域名访问。</p>
+<p>针对简单的APP下载页面，了解以上内容即可。</p>
+</article><nav id="article-pagination"><a href="/2014/03/17/seajs-source/" title="Previous article: seajs源码解析" class="prev">&larr; Previous article</a><a href="/2014/02/12/js-prototype/" title="Next article: 老调重弹：那些年一遍又一遍领悟过的原型链" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>

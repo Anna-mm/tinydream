@@ -1,0 +1,82 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>jQuery事件系统二&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>jQuery事件系统二</h2><div class="meta">Oct 11 2014</div><p>jQuery事件系统并没有将事件监听函数直接绑定到DOM元素上，而是基于数据缓存系统管理监听函数的。举一个简单的栗子看一下何为数据缓存系统：</p>
+<pre><code><span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"box"</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"content"</span>&gt;</span><span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+<span class="tag">&lt;<span class="title">input</span> <span class="attribute">type</span>=<span class="value">"button"</span> <span class="attribute">name</span>=<span class="value">"submit"</span> <span class="attribute">value</span>=<span class="value">"click me"</span> <span class="attribute">class</span>=<span class="value">"btn"</span> /&gt;</span>
+
+<span class="tag">&lt;<span class="title">script</span> <span class="attribute">type</span>=<span class="value">"text/javascript"</span>&gt;</span><span class="javascript">
+    $(<span class="string">".box"</span>).click(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        console.log(<span class="string">"box"</span>);
+    })
+    $(<span class="string">".content"</span>).click(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        console.log(<span class="string">"content click 1"</span>);
+    })
+    $(<span class="string">".content"</span>).click(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        console.log(<span class="string">"content click 2"</span>);
+    }) 
+    $(<span class="string">".content"</span>).hover(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        console.log(<span class="string">"hover in"</span>);
+    },<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        console.log(<span class="string">"hover out"</span>);
+    }) 
+    $(<span class="string">".btn"</span>).click(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        console.log(<span class="string">"btn"</span>);
+    }) 
+</span><span class="tag">&lt;/<span class="title">script</span>&gt;</span>
+</code></pre><p>如上述代码所示，页面上有一对父子元素box、content和一个按钮btn。</p>
+<ul>
+<li>父元素box绑定了click事件</li>
+<li>子元素content绑定了两个click事件，一个hover事件</li>
+<li>btn元素绑定了一个click事件。</li>
+</ul>
+<p>我们看一下chrome下面打印jQuery.cache是什么情况：<br><img src="/img/jsevent1.png" alt="jQuery事件系统"></p>
+<p>由上图所示，</p>
+<ul>
+<li>jQuery.cache中存储了三个以ID为key值的对象，三个ID是为页面中的box、content、btn元素分配的唯一ID。</li>
+<li>每个object中存储了events和handle两个对象。</li>
+<li>events对象存储了click、mouseout、mouseover三个事件对象，click对象的值是一个存储了两个元素的数组，对应content元素的两个click事件和hover事件。</li>
+<li>click[0]的数组元素中存储了一个guid，唯一标识事件处理函数的ID，以此类推jQuery.cache[1].events.click[0].guid == 1, jQuery.cache[2].events.click[1].guid == 3；存储了一个type＝“click”；存储了一个事件处理函数handler，参见上图底部，是content元素绑定得第一个click事件的处理函数。</li>
+<li>那回到最外层，每个object的直接子元素handle是干什么用的？通过打印的内容可见，其方法体内调用了jQuery.events.dispatch事件。事实上，每个object对象都有一个handle作为入口监听函数，当浏览器触发事件时，入口监听函数被调用，该函数从事件缓存对象events中获取绑定到此元素上的对应的事件处理函数，然后执行。</li>
+</ul>
+<p>问题来了，jQuery.cache中没有存储任何与页面元素有关的信息，其中的1、2、3是如何对应到DOM元素的？一定在什么地方给DOM元素设置了自定义属性存储了其ID值。</p>
+<p><img src="/img/jsevent2.png" alt="jQuery事件系统"></p>
+<p>如上图所示，代码来源于jQuery.event.add方法，给派发函数传递的第一个参数当前的DOM元素已经有一个自定义属性jQueryXXXX==2，接下来寻找何处设置了这个自定义属性。</p>
+<pre><code>jQuery.event = {
+
+    add: <span class="function"><span class="keyword">function</span><span class="params">( elem, types, handler, data, selector )</span> {</span>
+
+        <span class="keyword">var</span> elemData, eventHandle, events,
+            t, tns, type, namespaces, handleObj,
+            handleObjIn, handlers, special;
+
+        <span class="comment">//通过jQuery._data给当前DOM元素设置自定义数据</span>
+        <span class="keyword">if</span> ( elem.nodeType === <span class="number">3</span> || ... || !(elemData = jQuery._data( elem )) ) {
+            <span class="keyword">return</span>;
+        }
+        ......
+    }
+}
+
+jQuery.extend({
+    data: <span class="function"><span class="keyword">function</span><span class="params">( elem, name, data, pvt)</span> {</span>
+
+        <span class="keyword">var</span> thisCache, ret,
+            internalKey = jQuery.expando, <span class="comment">//这个自定义属性来自与expando，这是什么东西？？</span>
+            getByName = <span class="keyword">typeof</span> name === <span class="string">"string"</span>,
+
+        <span class="keyword">if</span> ( !id ) {
+            <span class="comment">// 给DOM元素设置一个unique ID，以获取全局的数据缓存对象中的对应数据</span>
+            <span class="keyword">if</span> ( isNode ) {
+                elem[ internalKey ] = id = jQuery.deletedIds.pop() || ++jQuery.uuid;
+            } <span class="keyword">else</span> {
+                id = internalKey;
+            }
+        }
+        ......
+    },
+    _data: <span class="function"><span class="keyword">function</span><span class="params">( elem, name, data )</span> {</span>
+        <span class="keyword">return</span> jQuery.data( elem, name, data, <span class="literal">true</span> );
+    },
+},
+</code></pre><p>好，我们知道了DOM元素的ID与jQuery.cache中的对象ID是一一对应的，在派发函数dispatch中通过种对应关系就能方便地找到当前DOM元素所绑定的事件从而执行。不过，顺着这个线索也遗留了一些问题，比如jQuery.expando是什么？jQuery.data除了DOM ID还设置了那些属性？事件派发函数中对于子元素的click事件冒泡到父元素是如何处理的？且听下回分解。</p>
+</article><nav id="article-pagination"><a href="/2014/10/13/js-event3/" title="Previous article: jQuery事件系统三" class="prev">&larr; Previous article</a><a href="/2014/10/10/js-event1/" title="Next article: jQuery事件系统一" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>
