@@ -4,7 +4,7 @@
   <subtitle><![CDATA[梦想走着走着就丢了 只想充实地过每一天 每天都有挑战]]></subtitle>
   <link href="/atom.xml" rel="self"/>
   <link href="http://yoursite.com/"/>
-  <updated>2014-10-13T11:15:30.079Z</updated>
+  <updated>2015-12-15T14:55:25.557Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -15,16 +15,417 @@
   <generator uri="http://zespia.tw/hexo/">Hexo</generator>
   
   <entry>
+    <title><![CDATA[前端MVC变形记]]></title>
+    <link href="http://yoursite.com/2015/10/22/mvc-deformation/"/>
+    <id>http://yoursite.com/2015/10/22/mvc-deformation/</id>
+    <published>2015-10-22T00:00:00.000Z</published>
+    <updated>2015-12-15T14:55:20.000Z</updated>
+    <content type="html"><![CDATA[<h2 id="背景：">背景：</h2>
+<p>MVC是一种架构设计模式，它通过关注点分离鼓励改进应用程序组织。在过去，MVC被大量用于构建桌面和服务器端应用程序，如今Web应用程序的开发已经越来越向传统应用软件开发靠拢，Web和应用之间的界限也进一步模糊。传统编程语言中的设计模式也在慢慢地融入Web前端开发。由于前端开发的环境特性，在经典MVC模式上也引申出了诸多MV*模式，被实现到各个Javascript框架中都有多少的衍变。在研究MV*模式和各框架的过程中，却是“剪不断、理还乱”：</p>
+<ol>
+<li>为什么每个地方讲的MVC都不太一样？</li>
+<li>MVP、MVVM的出现是要解决什么问题？</li>
+<li>为什么有人义正言辞的说“MVC在Web前端开发中根本无法使用”？</li>
+</ol>
+<p>带着十万个为什么去翻阅很多资料，但是看起来像view、model、controller、解耦、监听、通知、主动、被动、注册、绑定、渲染等各种术语的排列组合，像汪峰的歌词似的。本篇希望用通俗易懂的方式阐述清楚一些关系，由于接触时间有限，英文阅读能力有限，可能会存在误解，欢迎讨论和纠正。</p>
+<a id="more"></a>
+
+<h2 id="MVC变形记">MVC变形记</h2>
+<h3 id="MVC历史">MVC历史</h3>
+<p>MVC最初是在研究Smalltalk-80（1979年）期间设计出来的，恐怕没有一本书能够回到计算机石器时代介绍一下Smalltalk的代码是如何实现MVC的，不仅如此，连想搞清楚当时的应用场景都很难了，都要追溯到80后出生以前的事了。但是当时的图形界面少之又少，施乐公司正在研发友好的用户图形界面，以取代电脑屏幕上那些拒人于千里之外的命令行和DOS提示符。那时计算机世界天地混沌，浑然一体，然后出现了一个创世者，将现实世界抽象出模型形成model，将人机交互从应用逻辑中分离形成view，然后就有了空气、水、鸡啊、蛋什么的。在1995年出版的《设计模式：可复用面向对象软件的基础》对MVC进行了深入的阐述，在推广使用方面发挥了重要作用。</p>
+<p>MVC包括三类对象，将他们分离以提高灵活性和复用性。</p>
+<ul>
+<li><p>模型model用于封装与应用程序的业务逻辑相关的数据以及对数据的处理方法，会有一个或多个视图监听此模型。一旦模型的数据发生变化，模型将通知有关的视图。</p>
+</li>
+<li><p>视图view是它在屏幕上的表示，描绘的是model的当前状态。当模型的数据发生变化，视图相应地得到刷新自己的机会。</p>
+</li>
+<li><p>控制器controller定义用户界面对用户输入的响应方式，起到不同层面间的组织作用，用于控制应用程序的流程，它处理用户的行为和数据model上的改变。</p>
+</li>
+</ul>
+<p><img src="/blog/mvc-deformation/img/typicalMVC.png" alt="经典MVC模式"></p>
+<p>实线：方法调用<br>虚线：事件通知</p>
+<p>其中涉及两种设计模式：</p>
+<ul>
+<li><p>view和model之间的观察者模式，view观察model，事先在此model上注册，以便view可以了解在数据model上发生的改变。</p>
+</li>
+<li><p>view和controller之间的策略模式</p>
+</li>
+</ul>
+<blockquote>
+<p>一个策略是一个表述算法的对象，MVC允许在不改变视图外观的情况下改变视图对用户输入的响应方式。例如，你可能希望改变视图对键盘的响应方式，或希望使用弹出菜单而不是原来的命令键方式。MVC将响应机制封装在controller对象中。存在着一个controller的类层次结构，使得可以方便地对原有的controller做适当改变而创建新的controller。</p>
+<p>view使用controller子类的实例来实现一个特定的响应策略。要实现不同的响应的策略只要用不同种类的controller实例替换即可。甚至可以在运行时刻通过改变view的controller来改变用户输入的响应方式。例如，一个view可以被禁止接受任何输入，只需给他一个忽略输入事件的controller。</p>
+</blockquote>
+<p>好吧，如果被上述言论绕昏了，请继续研读《设计模式：可复用面向对象软件的基础》。</p>
+<h3 id="MVC_for_JAVASCRIPT">MVC for JAVASCRIPT</h3>
+<p>我们回顾了经典的MVC，接下来讲到的MVC主要是在Javascript上的实现。</p>
+<p><img src="/blog/mvc-deformation/img/javascriptMVC.png" alt="javascript MVC模式"></p>
+<p><a href="https://www.safaribooksonline.com/library/view/learning-javascript-design/9781449334840/ch10s02.html" target="_blank" rel="external">源图</a></p>
+<p>如图所示，view承接了部分controller的功能，负责处理用户输入，但是不必了解下一步做什么。它依赖于一个controller为她做决定或处理用户事件。事实上，前端的view已经具备了独立处理用户事件的能力，如果每个事件都要流经controller，势必增加复杂性。同时，view也可以委托controller处理model的更改。model数据变化后通知view进行更新，显示给用户。这个过程是一个圆，一个循环的过程。</p>
+<p>这种从经典MVC到Javascript MVC的1对1转化，导致控制器的角色有点尴尬。MVC这样的结构的正确性在于，任何界面都需要面对一个用户，而controller “是用户和系统之间的链接”。在经典MVC中，controller要做的事情多数是派发用户输入给不同的view，并且在必要的时候从view中获取用户输入来更改model，而Web以及绝大多数现在的UI系统中，controller的职责已经被系统实现了。由于某种原因，控制器和视图的分界线越来越模糊，也有认为，view启动了action理论上应该把view归属于controller。比如在Backbone中，Backbone.View和Backbone.Router一起承担了controller的责任。这就为MVC中controller的衍变埋下了伏笔。</p>
+<h3 id="MVP">MVP</h3>
+<p>MVP（model-view-Presenter）是经典MVC设计模式的一种衍生模式，是在1990年代Taligent公司创造的，一个用于C++ CommonPoint的模型。背景上不再考证，直接上图看一下与MVC的不同。</p>
+<p><img src="/blog/mvc-deformation/img/mvp.png" alt="MVP模式"></p>
+<p>经典MVC中，一对controller-view捆绑起来表示一个ui组件，controller直接接受用户输入，并将输入转为相应命令来调用model的接口，对model的状态进行修改，最后通过观察者模式对view进行重新渲染。</p>
+<p>进化为MVP的切入点是修改controller-view的捆绑关系，为了解决controller-view的捆绑关系，将进行改造，使view不仅拥有UI组件的结构，还拥有处理用户事件的能力，这样就能将controller独立出来。为了对用户事件进行统一管理，view只负责将用户产生的事件传递给controller，由controller来统一处理，这样的好处是多个view可共用同一个controller。此时的controller也由组件级别上升到了应用级别，然而更新view的方式仍然与经典MVC一样：通过Presenter更新model，通过观察者模式更新view。</p>
+<p>另一个显而易见的不同在于，MVC是一个圆，一个循环的过程，但MVP不是，依赖Presenter作为核心，负责从model中拿数据，填充到view中。常见的MVP的实现是被动视图(passive view),Presenter观察model，不再是view观察model，一旦model发生变化，就会更新view。Presenter有效地绑定了model到view。view暴露了setters接口以便Presenter可以设置数据。对于这种被动视图的结构，没有直接数据绑定的概念。但是他的好处是在view和model直接提供更清晰的分离。但是由于缺乏数据绑定支持，意味着不得不单独关注某个任务。在MVP里，应用程序的逻辑主要在Presenter来实现，其中的view是很薄的一层。</p>
+<h3 id="MVVM">MVVM</h3>
+<p>MVVM，Model-View-ViewModel，最初是由微软在使用Windows Presentation Foundation和SilverLight时定义的，2005年John Grossman在一篇关于Avalon（WPF 的代号）的博客文章中正式宣布了它的存在。如果你用过Visual Studio, 新建一个WPF Application，然后在“设计”中拖进去一个控件、双击后在“代码”中写事件处理函数、或者绑定数据源。就对这个MVVM有点感觉了。比如VS自动生成的如下代码：</p>
+<figure class="highlight xaml"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+</pre></td><td class="code"><pre><span class="tag">&lt;<span class="title">GroupBox</span> <span class="attribute">Header</span>=<span class="value">"绑定对象"</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">StackPanel</span> <span class="attribute">Orientation</span>=<span class="value">"Horizontal"</span> <span class="attribute">Name</span>=<span class="value">"stackPanel1"</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">TextBlock</span> <span class="attribute">Text</span>=<span class="value">"学号:"</span>/&gt;</span>
+        <span class="tag">&lt;<span class="title">TextBlock</span> <span class="attribute">Text</span>=<span class="value">"{Binding Path=StudentID}"</span>/&gt;</span>
+        <span class="tag">&lt;<span class="title">TextBlock</span> <span class="attribute">Text</span>=<span class="value">"姓名:"</span>/&gt;</span>
+        <span class="tag">&lt;<span class="title">TextBlock</span> <span class="attribute">Text</span>=<span class="value">"{Binding Path=Name}"</span>/&gt;</span>
+        <span class="tag">&lt;<span class="title">TextBlock</span> <span class="attribute">Text</span>=<span class="value">"入学日期:"</span>/&gt;</span>
+        <span class="tag">&lt;<span class="title">TextBlock</span> <span class="attribute">Text</span>=<span class="value">"{Binding Path=EntryDate, StringFormat=yyyy-MM-dd}"</span>/&gt;</span>
+        <span class="tag">&lt;<span class="title">TextBlock</span> <span class="attribute">Text</span>=<span class="value">"学分:"</span>/&gt;</span>
+        <span class="tag">&lt;<span class="title">TextBlock</span> <span class="attribute">Text</span>=<span class="value">"{Binding Path=Credit}"</span>/&gt;</span>
+    <span class="tag">&lt;/<span class="title">StackPanel</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">GroupBox</span>&gt;</span>
+</pre></td></tr></table></figure>
+
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+</pre></td><td class="code"><pre>stackPanel1.DataContext = <span class="keyword">new</span> Student() {
+    StudentID=<span class="number">20130501</span>,
+    Name=<span class="string">"张三"</span>,
+    EntryDate=DateTime.Parse(<span class="string">"2013-09-01"</span>),
+    Credit=<span class="number">0.0</span>
+};
+</pre></td></tr></table></figure>
+
+<p>其中最重要的特性之一就是数据绑定，Data-binding。没有前后端分离，一个开发人员全搞定，一只手抓业务逻辑、一只手抓数据访问，顺带手拖放几个UI控件，绑定数据源到某个对象或某张表，一步到位。</p>
+<p>背景介绍完毕，再来看一下理论图</p>
+<p><img src="/blog/mvc-deformation/img/mvvm.png" alt="MVVM模式"></p>
+<p>首先，view和model是不知道彼此存在的，同MVP一样，将view和model清晰地分离开来。<br>其次，view是对viewmodel的外在显示，与viewmodel保持同步，viewmodel对象可以看作是view的上下文。view绑定到viewmodel的属性上，如果viewmodel中的属性值变化了，这些新值通过数据绑定会自动传递给view。反过来viewmodel会暴露model中的数据和特定状态给view。<br>所以，view不知道model的存在，viewmodel和model也觉察不到view。事实上，model也完全忽略viewmodel和view的存在。这是一个非常松散耦合的设计。</p>
+<h2 id="流行的MV*框架：">流行的MV*框架：</h2>
+<p>每个框架都有自己的特性，这里主要讨论MVC三个角色的责任。粗浅地过一遍每个框架的代码结构和风格。</p>
+<h3 id="BackboneJS">BackboneJS</h3>
+<p>Backbone通过提供模型Model、集合Collection、视图View赋予了Web应用程序分层结构，其中模型包含领域数据和自定义事件；集合Colection是模型的有序或无序集合，带有丰富的可枚举API； 视图可以声明事件处理函数。最终将模型、集合、视图与服务端的RESTful JSON接口连接。</p>
+<p>Backbone在升级的过程中，去掉了controller，由view和router代替controller，view集中处理了用户事件（如click，keypress等）、渲染HTML模板、与模型数据的交互。Backbone的model没有与UI视图数据绑定，而是需要在view中自行操作DOM来更新或读取UI数据。Router为客户端路由提供了许多方法，并能连接到指定的动作（actions）和事件（events）。</p>
+<p>Backbone是一个小巧灵活的库，只是帮你实现一个MVC模式的框架，更多的还需要自己去实现。适合有一定Web基础，喜欢原生JS去操作DOM（因为没有数据绑定）的开发人员。为什么称它为库，而不是框架，不仅仅是由于仅4KB的代码，更重要的是<br>使用一个库，你有控制权。如果用一个框架，控制权就反转了，变成框架在控制你。库能够给予灵活和自由，但是框架强制使用某种方式，减少重复代码。这便是Backbone与Angular的区别之一了。</p>
+<p>至于Backbone属于MV*中的哪种模式，有人认为不是MVC，有人觉得更接近于MVP，事实上，它借用多个架构模式中一些很好的概念，创建一个运行良好的灵活框架。不必拘泥于某种模式。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+</pre></td><td class="code"><pre><span class="comment">// view:</span>
+<span class="keyword">var</span> Appview = Backbone.View.extend({
+    <span class="comment">// 每个view都需要一个指向DOM元素的引用，就像ER中的main属性。</span>
+    el: <span class="string">'#container'</span>,
+
+    <span class="comment">// view中不包含html标记，有一个链接到模板的引用。</span>
+    template: _.template(<span class="string">"&lt;h3&gt;Hello &lt;%= who %&gt;&lt;/h3&gt;"</span>),
+
+    <span class="comment">// 初始化方法</span>
+    initialize: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+      <span class="keyword">this</span>.render();
+    },
+
+    <span class="comment">// $el是一个已经缓存的jQuery对象</span>
+    render: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+      <span class="keyword">this</span>.$el.html(<span class="string">"Hello World"</span>);
+    },
+
+    <span class="comment">// 事件绑定</span>
+    events: {<span class="string">'keypress #new-todo'</span>: <span class="string">'createTodoOnEnter'</span>}
+});
+<span class="keyword">var</span> appview = <span class="keyword">new</span> Appview();
+
+<span class="comment">// model:</span>
+<span class="comment">// 每个应用程序的核心、包含了交互数据和逻辑</span>
+<span class="comment">// 如数据验证、getter、setter、默认值、数据初始化、数据转换</span>
+<span class="keyword">var</span> app = {};
+
+app.Todo = Backbone.model.extend({
+  defaults: {
+    title: <span class="string">''</span>,
+    completed: <span class="literal">false</span>
+  }
+});
+
+<span class="comment">// 创建一个model实例</span>
+<span class="keyword">var</span> todo = <span class="keyword">new</span> app.Todo({title: <span class="string">'Learn Backbone.js'</span>, completed: <span class="literal">false</span>});
+todo.get(<span class="string">'title'</span>); <span class="comment">// "Learn Backbone.js"</span>
+todo.get(<span class="string">'completed'</span>); <span class="comment">// false</span>
+todo.get(<span class="string">'created_at'</span>); <span class="comment">// undefined</span>
+todo.set(<span class="string">'created_at'</span>, <span class="built_in">Date</span>());
+todo.get(<span class="string">'created_at'</span>); <span class="comment">// "Wed Sep 12 2012 12:51:17 GMT-0400 (EDT)"</span>
+
+<span class="comment">// collection：</span>
+<span class="comment">// model的有序集合，可以设置或获取model</span>
+<span class="comment">// 监听集合中的数据变化，从后端获取模型数据、持久化。</span>
+app.TodoList = Backbone.Collection.extend({
+  model: app.Todo,
+  localStorage: <span class="keyword">new</span> Store(<span class="string">"backbone-todo"</span>)
+});
+
+<span class="comment">// collection实例</span>
+<span class="keyword">var</span> todoList = <span class="keyword">new</span> app.TodoList()
+todoList.create({title: <span class="string">'Learn Backbone\'s Collection'</span>});
+
+<span class="comment">// model实例</span>
+<span class="keyword">var</span> model = <span class="keyword">new</span> app.Todo({title: <span class="string">'Learn models'</span>, completed: <span class="literal">true</span>});
+todoList.add(model);
+todoList.pluck(<span class="string">'title'</span>);
+todoList.pluck(<span class="string">'completed'</span>);
+</pre></td></tr></table></figure>
+
+<h3 id="KnockoutJS">KnockoutJS</h3>
+<p>KnockoutJS是一个名正言顺的MVVM框架，通过简洁易读的data-bind语法，将DOM元素与viewmodel关联起来。当模型（viewmodel）状态更新时，自动更新UI界面。<br>viewmodel是model和view上的操作的一个连接，是一个纯粹的Javascript对象。它不是UI，没有控件和样式的概念，它也不是持久化的模型数据，它只是hold住一些用户正在编辑的数据，然后暴露出操作这些数据（增加或删除）的方法。</p>
+<p>view是对viewmodel中数据的一个可视化的显示，view观察viewmodel，操作view时会发送命令到viewmodel，并且当viewmodel变化时更新。view和model是不了解彼此的存在的。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="code"><pre><span class="tag">&lt;<span class="title">form</span> <span class="attribute">data-bind</span>=<span class="value">"submit: addItem"</span>&gt;</span>
+    New item:
+    <span class="tag">&lt;<span class="title">input</span> <span class="attribute">data-bind</span>=<span class="value">'value: itemToAdd, valueUpdate: "afterkeydown"'</span> /&gt;</span>
+    <span class="tag">&lt;<span class="title">button</span> <span class="attribute">type</span>=<span class="value">"submit"</span> <span class="attribute">data-bind</span>=<span class="value">"enable: itemToAdd().length &gt; 0"</span>&gt;</span>Add<span class="tag">&lt;/<span class="title">button</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">p</span>&gt;</span>Your items:<span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">select</span> <span class="attribute">multiple</span>=<span class="value">"multiple"</span> <span class="attribute">width</span>=<span class="value">"50"</span> <span class="attribute">data-bind</span>=<span class="value">"options: items"</span>&gt;</span> <span class="tag">&lt;/<span class="title">select</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">form</span>&gt;</span>
+</pre></td></tr></table></figure>
+
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+</pre></td><td class="code"><pre><span class="comment">// viewmodel</span>
+<span class="keyword">var</span> SimpleListmodel = <span class="function"><span class="keyword">function</span><span class="params">(items)</span> {</span>
+    <span class="keyword">this</span>.items = ko.observableArray(items);
+    <span class="keyword">this</span>.itemToAdd = ko.observable(<span class="string">""</span>);
+    <span class="keyword">this</span>.addItem = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+        <span class="keyword">if</span> (<span class="keyword">this</span>.itemToAdd() != <span class="string">""</span>) {
+            <span class="comment">// 把input中的值加入到items，会自动更新select控件</span>
+            <span class="keyword">this</span>.items.push(<span class="keyword">this</span>.itemToAdd());
+            <span class="comment">// 清空input中的值</span>
+            <span class="keyword">this</span>.itemToAdd(<span class="string">""</span>);
+        }
+    <span class="comment">// 确保这里的this一直是viewmodel</span>
+    }.bind(<span class="keyword">this</span>);
+};
+
+ko.applyBindings(<span class="keyword">new</span> SimpleListmodel([<span class="string">"Alpha"</span>, <span class="string">"Beta"</span>, <span class="string">"Gamma"</span>]));
+</pre></td></tr></table></figure>
+
+<h3 id="AngularJS">AngularJS</h3>
+<p>AngularJS试图成为Web应用中的一种端对端的解决方案。这意味着它不只是你的Web应用中的一个小部分，而是一个完整的端对端的解决方案。这会让AngularJS在构建一个CRUD的应用时看起来很呆板，缺乏灵活性。AngularJS是为了克服HTML在构建应用上的不足而设计的。使用了不同的方法，它尝试去补足HTML本身在构建应用方面的缺陷。通过使用标识符(directives)的结构，让浏览器能够识别新的语法。例如使用双大括号{{}}语法进行数据绑定；使用ng-controller指定每个控制器负责监视视图中的哪一部分；使用ng-model，把输入数据绑定到模型中的一部分属性上。</p>
+<p>双向数据绑定是AngularJS的另一个特性。UI控件的任何更改会立即反映到模型变量（一个方向），模型变量的任何更改都会立即反映到问候语文本中（另一方向）。AngularJS通过作用域来保持数据模型与视图界面UI的双向同步。一旦模型状态发生改变，AngularJS会立即刷新反映在视图界面中，反之亦然。</p>
+<p>AngularJS原本是倾向于MVC，但是随着项目重构和版本升级，现在更接近MVVM。和Knockout view中的风格类似，都像从WPF衍变过来的，只是Knockout使用了自定义属性data-bind作为绑定入口，而AngularJS对于HTML的变革更彻底，扩展HTML的语法，引入一系列的指令。</p>
+<p>在AngularJS中，一个视图是模型通过HTML模板渲染之后的映射。这意味着，不论模型什么时候发生变化，AngularJS会实时更新结合点，随之更新视图。比如，视图组件被AngularJS用下面这个模板构建出来：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+</pre></td><td class="code"><pre><span class="tag">&lt;<span class="title">body</span> <span class="attribute">ng-controller</span>=<span class="value">"PhoneListCtrl"</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">ul</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">li</span> <span class="attribute">ng-repeat</span>=<span class="value">"phone in phones"</span>&gt;</span>
+            
+            <span class="tag">&lt;<span class="title">p</span>&gt;</span><span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+        <span class="tag">&lt;/<span class="title">li</span>&gt;</span>
+    <span class="tag">&lt;/<span class="title">ul</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">body</span>&gt;</span>
+</pre></td></tr></table></figure>
+
+<p>在li标签里面的ng-repeat语句是一个AngularJS迭代器。包裹在phone.name和phone.snippet周围的花括号标识着数据绑定，是对应用一个数据模型的引用。当页面加载的时候，AngularJS会根据模版中的属性值，将其与数据模型中相同名字的变量绑定在一起，以确保两者的同步性。</p>
+<p>在PhoneListCtrl控制器里面初始化了数据模型：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+</pre></td><td class="code"><pre><span class="comment">// controller:</span>
+<span class="function"><span class="keyword">function</span> <span class="title">PhoneListCtrl</span><span class="params">($scope)</span> {</span>
+  <span class="comment">// 数组中存储的对象是手机数据列表</span>
+  $scope.phones = [
+    {<span class="string">"name"</span>: <span class="string">"Nexus S"</span>,
+     <span class="string">"snippet"</span>: <span class="string">"Fast just got faster with Nexus S."</span>},
+    {<span class="string">"name"</span>: <span class="string">"Motorola XOOM™ with Wi-Fi"</span>,
+     <span class="string">"snippet"</span>: <span class="string">"The Next, Next Generation tablet."</span>},
+    {<span class="string">"name"</span>: <span class="string">"MOTOROLA XOOM™"</span>,
+     <span class="string">"snippet"</span>: <span class="string">"The Next, Next Generation tablet."</span>}
+  ];
+}
+</pre></td></tr></table></figure>
+
+<p>尽管控制器看起来并没有什么控制的作用，但是它在这里的重要性在于，通过给定数据模型的作用域$scope，允许建立模型和视图之间的数据绑定。方法名PhoneListCtrl和body标签里面的ngcontroller指令的值相匹配。当应用启动之后，会有一个根作用域被创建出来，而控制器的作用域是根作用域的一个典型后继。这个控制器的作用域对所有<body ng-controller="PhoneListCtrl" \="">标记内部的数据绑定有效。</body></p>
+<p>AngularJS的作用域理论非常重要：一个作用域可以视作模板、模型和控制器协同工作的粘接器。AngularJS使用作用域，同时还有模板中的信息，数据模型和控制器。这些可以帮助模型和视图分离，但是他们两者确实是同步的！任何对于模型的更改都会即时反映在视图上；任何在视图上的更改都会被立刻体现在模型中。</p>
+<h2 id="实践中的思考">实践中的思考</h2>
+<p>我们使用的MVC框架是<a href="https://github.com/ecomfe/er" target="_blank" rel="external">ER</a>，适用于并能很方便地构建一个整站式的AJAX Web应用。提供精简、核心的action、model和view的抽象，使得构建RIA应用变得简单可行。在使用的过程中近距离地体会到非常多方面的优秀的设计理念。也让我开始思考各个角色的转型。</p>
+<h3 id="让view上前线">让view上前线</h3>
+<p>我开始思考action（controller）这个角色。我觉得从纯粹地解耦角度来说，view和model应该是互相不知道彼此存在的，所有的事件流和对数据、UI的处理应该都流经action。但是这一点又极不现实。用户操作了一个UI，需要更新model的一个数据，就要fire到action，通过action来调用model的set方法。这样又有点麻烦，因为view中有对model的应用，可以一句代码搞定这一个数据的设置。所以，我自己设置了一个规则：如果是简单的模型数据读写可以直接在view中操作；如果要经过复杂的数据处理，必须流经action。于是，我遇到了一种怎么都偷不了懒（必须经过action）的情况：<br>比如有个主action main，两个子action list、select，用户在list中的view选择一条数据添加到右侧select中。那走过的流程是这样的：</p>
+<p><img src="/blog/mvc-deformation/img/practice.png" alt="实践中的思考"></p>
+<ol>
+<li>子Action中的listView接受UI事件，fire到listAction中</li>
+<li>listAction继续将事件fire到mainView中，由主action来处理另外子Action的事情。</li>
+<li>mainView接收到事件、调用子Action selectAction的方法</li>
+<li>selectAction继续调用selectView的方法来完成UI的更新。</li>
+</ol>
+<p>其中涉及的model的变化暂时不考虑。我在想，view既然把经典MVC中的controller接受用户事件的角色承接过来的，那如果借鉴Backbone的思想，把view作为controller的一个实现，推到战场的最前线。省掉两次action的中转传递，是不是更简单。</p>
+<h3 id="model驱动开发">model驱动开发</h3>
+<p>实际开发中，常常会以view为核心，页面上需要展示什么数据，就去model中设置数据源。发生了用户事件，我会在action中更新model，然后刷新view。有时候会遗漏更新model，直到需要数据时才发现没有保存到model中。</p>
+<p>model本身是独立的，自控制的，不依赖于view，能够同步支持多view的显示。就像linux上的应用程序通常会提供图形界面和命令行两种操作方式一样。那如果以model为核心，model驱动开发，数据在手、天下我有，以模型验证保证数据的完整性和正确性。实现数据绑定，任何对模型的更改都会在界面上反映出来。那我们只要预先写好view和model的关系映射（类似viewmodel），然后只关注模型数据，就OK了。</p>
+<p><strong>对于MV*家族，都是在经典MVC基础上随着时代的发展、应用环境的变化衍变出来的。实现MV*模式的这些框架到底归属于哪种模式，也不必泥古。MV*是一个很有争议性的话题，能够构建一个健壮、具有良好设计、遵从关注点分离的项目比花时间去争论到底是MV*更有意义。</strong></p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<h2 id="背景：">背景：</h2>
+<p>MVC是一种架构设计模式，它通过关注点分离鼓励改进应用程序组织。在过去，MVC被大量用于构建桌面和服务器端应用程序，如今Web应用程序的开发已经越来越向传统应用软件开发靠拢，Web和应用之间的界限也进一步模糊。传统编程语言中的设计模式也在慢慢地融入Web前端开发。由于前端开发的环境特性，在经典MVC模式上也引申出了诸多MV*模式，被实现到各个Javascript框架中都有多少的衍变。在研究MV*模式和各框架的过程中，却是“剪不断、理还乱”：</p>
+<ol>
+<li>为什么每个地方讲的MVC都不太一样？</li>
+<li>MVP、MVVM的出现是要解决什么问题？</li>
+<li>为什么有人义正言辞的说“MVC在Web前端开发中根本无法使用”？</li>
+</ol>
+<p>带着十万个为什么去翻阅很多资料，但是看起来像view、model、controller、解耦、监听、通知、主动、被动、注册、绑定、渲染等各种术语的排列组合，像汪峰的歌词似的。本篇希望用通俗易懂的方式阐述清楚一些关系，由于接触时间有限，英文阅读能力有限，可能会存在误解，欢迎讨论和纠正。</p>
+]]>
+    
+    </summary>
+    
+      <category term="JAVASCRIPT" scheme="http://yoursite.com/tags/JAVASCRIPT/"/>
+    
+      <category term="MVC" scheme="http://yoursite.com/tags/MVC/"/>
+    
+      <category term="MVP" scheme="http://yoursite.com/tags/MVP/"/>
+    
+      <category term="MVVM" scheme="http://yoursite.com/tags/MVVM/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[有效地勤奋]]></title>
+    <link href="http://yoursite.com/2015/05/12/per-memory/"/>
+    <id>http://yoursite.com/2015/05/12/per-memory/</id>
+    <published>2015-05-12T06:02:26.000Z</published>
+    <updated>2015-05-12T08:21:05.000Z</updated>
+    <content type="html"><![CDATA[<p>像博客签名一样”梦想走着走着就丢了，只想充实地过每一天，每天都有挑战“，我一直践行着，脚踏实地。不喜欢计算利益得失寻求技巧的“聪明”孩子或者伪装得很“聪明”的孩子，有些人确实比较聪明，要么是天生的、父辈的勤奋习得传承下来的聪明基因、要么是后天的努力。我爷爷是小学毕业、村里的会计；我爸爸是高中毕业、高考落榜；所以我先天的聪明是有限的，或者说出生于这样的平台之上我已心怀感激，于是剩下的就靠自己了。我一直以勤奋自诩，直到近来发生的一些小事我开始思考如何更有效。</p>
+<h3 id="专业书都看过了，我也不是专家">专业书都看过了，我也不是专家</h3>
+<p>我非常喜欢看书，直到前段时间才正式放弃去国图借书切换到电子阅读平台。偶然间我发现了这样一张图，<br><img src="/img/memory1.png" alt="两周后你还记得什么"><br>kao，两周后读过的书只剩下10%，难道这是最低效的学习方式？难怪有些书看完之后隔很久再看感觉跟没看过一样。难怪我还不是领域专家。是的，我们都知道遗忘曲线，上学的时候背单词、复习，都是学而时习之，可是工作之后看书谁还会在看完的1、2、4、7、15天再复习一遍。何况在信息充斥的现在，百度一下就知道了，关闭网页就忘记了。而且注意力越发涣、思考越来越浅。还记得以前老师常讲的读书要眼到、口到、笔到、心到，那多累啊。</p>
+<h3 id="做了一个月仰卧起坐，我也没有马甲线">做了一个月仰卧起坐，我也没有马甲线</h3>
+<p>我有一个月的时间里，每天200～300个仰卧起坐，体重没有下降、小腹也没有平旦、更不要提马甲线。这对我打击非常大。直到跟一个健身达人聊天才发觉，可能是自己的方法不对。我就像上学时仰卧起坐考试那样、屈腿、仰卧、坐起。达人说不需要完全的坐起、上身起到某一个点上腹部会非常紧绷、吃力，再循环做就好了。我心想，那多累啊。</p>
+<p>这两件事，让我开始认真地思考“有效”以及我的座右铭，它像在默默地诉说：你的时间很充足，只管做就好了，总会慢慢地变得熟练、扎实。可现在，我感觉到时间不再充足、想要快一点，有效一点。我们再回顾一下上张图，会发现“我们说过的事”在两周之后也会记得大概80%，可见“说”是非常重要。是时候摒弃“默默地工作”这个信条了，它不仅让你慢慢地忘记做过的事情，也让别人不易觉察到你的付出。“说吧，不要钱。”</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>像博客签名一样”梦想走着走着就丢了，只想充实地过每一天，每天都有挑战“，我一直践行着，脚踏实地。不喜欢计算利益得失寻求技巧的“聪明”孩子或者伪装得很“聪明”的孩子，有些人确实比较聪明，要么是天生的、父辈的勤奋习得传承下来的聪明基因、要么是后天的努力。我爷爷是小学毕业、村里的]]>
+    </summary>
+    
+      <category term="高效率 有效 工作 方法" scheme="http://yoursite.com/tags/%E9%AB%98%E6%95%88%E7%8E%87-%E6%9C%89%E6%95%88-%E5%B7%A5%E4%BD%9C-%E6%96%B9%E6%B3%95/"/>
+    
+  </entry>
+  
+  <entry>
     <title><![CDATA[jQuery事件系统三]]></title>
     <link href="http://yoursite.com/2014/10/13/js-event3/"/>
     <id>http://yoursite.com/2014/10/13/js-event3/</id>
     <published>2014-10-13T07:34:49.000Z</published>
-    <updated>2014-10-13T11:13:58.000Z</updated>
-    <content type="html"><![CDATA[<p>上一节通过给DOM元素添加自定义数据引出jQuery.data这个数据缓存模块，这是数据缓存系统的另一大重头戏，这一节就好好说说jQuery.data.<br>再看jquery源码之前大概大概明确几个要点：<br>1、jQuery.expando = “jQuery” + ( jQuery.fn.jquery + Math.random() ).replace( /\D/g, “” )，即jQuery＋版本号＋随机数；<br>2、jQuery.data方法通过参数的不同，可以有几种用法：为DOM元素或Javascript对象设置任意类型的数据，或返回指定名称的数据，或返回关联的数据缓存对象。<br>3、数据缓存对象上区分内部数据和自定义数据，避免jQuery内部使用的数据和用户自定义的数据发生冲突。<br>._data()设置的数据为内部数据，直接存储在关联的数据存储对象上，如事件缓存数据。<br>.data()设置的数据为自定义数据，存储在关联的数据缓存对象的属性data上；如用户通过data-*自定义数据。</p>
+    <updated>2015-02-13T06:21:28.000Z</updated>
+    <content type="html"><![CDATA[<p>上一节通过给DOM元素添加自定义数据引出jQuery.data这个数据缓存模块，这是数据缓存系统的另一大重头戏，这一节就好好说说jQuery.data。再看jquery源码之前大概大概明确几个要点：</p>
+<p>1、jQuery.expando = “jQuery” + ( jQuery.fn.jquery + Math.random() )，即jQuery＋版本号＋随机数；</p>
+<p>2、jQuery.data方法通过参数的不同，可以有几种用法：为DOM元素或Javascript对象设置任意类型的数据，或返回指定名称的数据，或返回关联的数据缓存对象。</p>
+<p>3、数据缓存对象上区分内部数据和自定义数据，避免jQuery内部使用的数据和用户自定义的数据发生冲突。<br>方法._data()设置的数据为内部数据，直接存储在关联的数据存储对象上，如事件缓存数据。<br>方法.data()设置的数据为自定义数据，存储在关联的数据缓存对象的属性data上；如用户通过data-*自定义数据。</p>
+<p> 在上节栗子中设置content元素的自定义属性如下，存储位置如下：</p>
 <pre><code> <span class="variable">$(</span><span class="string">".content"</span>).data({<span class="string">"tagName"</span><span class="symbol">:<span class="string">"div"</span></span>,<span class="string">"className"</span><span class="symbol">:<span class="string">"content"</span></span>});
-</code></pre><p> 在上节栗子中设置content元素的自定义属性如下，存储位置如下：</p>
-<p> <img src="/img/jsevent3.png" alt="数据缓存系统"></p>
-<p> 总结一下：上节中通过jQuery._data设置DOM元素的内部属性，事实上是通过jQuery.data实现的，只是传递pvt参数为true，在jQuery.cache上顺序挂上key值为1、2、3…依此类推的数据缓存对象。同时设置DOM元素本身的属性elem[ jQuery.expando ] = id；以此来关联数据缓存系统。</p>
+</code></pre><p> <img src="/img/jsevent3.png" alt="数据缓存系统"></p>
+<p> 总结一下：上节中通过jQuery._data设置DOM元素的内部属性，事实上是通过jQuery.data实现的，只是传递pvt参数为true（用于内部属性或自定义属性的标识），在jQuery.cache上顺序挂上key值为1、2、3…依此类推的数据缓存对象。同时设置DOM元素本身的属性elem[ jQuery.expando ] = id；以此来关联数据缓存系统。</p>
+<p> <img src="/img/jsevent4.png" alt="数据缓存系统"></p>
+<p>源码如下：</p>
 <pre><code>jQuery.extend({
     cache: {},<span class="comment">//事件缓存系统</span>
     deletedIds: [],
@@ -34,7 +435,6 @@
     <span class="comment">//jQuery.noData中存放了不支持扩展属性的embed、object、applet元素的节点名称。</span>
     noData: {
         <span class="string">"embed"</span>: <span class="literal">true</span>,
-        <span class="comment">// Ban all objects except for Flash (which handle expandos)</span>
         <span class="string">"object"</span>: <span class="string">"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"</span>,<span class="comment">//用于检查object元素是否是flash</span>
         <span class="string">"applet"</span>: <span class="literal">true</span>
     },
@@ -55,7 +455,6 @@
             <span class="comment">//jQuery.expando是一个唯一的字符串，jquery对象产生的时候就生成</span>
             internalKey = jQuery.expando,
             getByName = <span class="keyword">typeof</span> name === <span class="string">"string"</span>,
-
             <span class="comment">// 区分DOM对象和javascript对象，如果是DOM元素，为了避免javascript和DOM元素之间循环引用导致的浏览器（IE6、7）垃圾回收机制不起作用，要把数据存储在全局缓存对象jQuery.cache中；对于Javascript对象，垃圾回收机制自动发生，数据可以之间存储在javascript对象上。</span>
             isNode = elem.nodeType,
             ......
@@ -87,7 +486,6 @@
             <span class="keyword">if</span> ( !thisCache.data ) {
                 thisCache.data = {};
             }
-
             thisCache = thisCache.data;
         }
         <span class="comment">//如果参数data不是undefined，则把参数data设置到属性name上。把name统一换成驼峰式。</span>
@@ -96,14 +494,8 @@
         }
         <span class="comment">// 参数name为字符串，data为null时读取单个数据。两次读取，使用name读取一次，使用驼峰式再读取一次。</span>
         <span class="keyword">if</span> ( getByName ) {
-
-            <span class="comment">// First Try to find as-is property data</span>
             ret = thisCache[ name ];
-
-            <span class="comment">// Test for null|undefined property data</span>
             <span class="keyword">if</span> ( ret == <span class="literal">null</span> ) {
-
-                <span class="comment">// Try to find the camelCased property</span>
                 ret = thisCache[ jQuery.camelCase( name ) ];
             }
         } <span class="keyword">else</span> {
@@ -129,7 +521,8 @@
 </code></pre><p>本节内容参考《jQuery技术内幕》第五章数据缓存Data</p>
 ]]></content>
     <summary type="html">
-    <![CDATA[<p>上一节通过给DOM元素添加自定义数据引出jQuery.data这个数据缓存模块，这是数据缓存系统的另一大重头戏，这一节就好好说说jQuery.data.<br>再看jquery源码之前大概大概明确几个要点：<br>1、jQuery.expando = “jQuery” + ]]>
+    <![CDATA[<p>上一节通过给DOM元素添加自定义数据引出jQuery.data这个数据缓存模块，这是数据缓存系统的另一大重头戏，这一节就好好说说jQuery.data。再看jquery源码之前大概大概明确几个要点：</p>
+<p>1、jQuery.expando = “jQuery” + ]]>
     </summary>
     
       <category term="jQuery event 事件 数据缓存 W3C 浏览器" scheme="http://yoursite.com/tags/jQuery-event-%E4%BA%8B%E4%BB%B6-%E6%95%B0%E6%8D%AE%E7%BC%93%E5%AD%98-W3C-%E6%B5%8F%E8%A7%88%E5%99%A8/"/>
@@ -141,7 +534,7 @@
     <link href="http://yoursite.com/2014/10/11/js-event2/"/>
     <id>http://yoursite.com/2014/10/11/js-event2/</id>
     <published>2014-10-11T10:01:11.000Z</published>
-    <updated>2014-10-12T16:23:06.000Z</updated>
+    <updated>2015-02-13T06:21:28.000Z</updated>
     <content type="html"><![CDATA[<p>jQuery事件系统并没有将事件监听函数直接绑定到DOM元素上，而是基于数据缓存系统管理监听函数的。举一个简单的栗子看一下何为数据缓存系统：</p>
 <pre><code><span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"box"</span>&gt;</span>
     <span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"content"</span>&gt;</span><span class="tag">&lt;/<span class="title">div</span>&gt;</span>
@@ -238,7 +631,7 @@ jQuery.extend({
     <link href="http://yoursite.com/2014/10/10/js-event1/"/>
     <id>http://yoursite.com/2014/10/10/js-event1/</id>
     <published>2014-10-10T09:16:59.000Z</published>
-    <updated>2014-10-12T16:29:40.000Z</updated>
+    <updated>2015-02-13T06:21:28.000Z</updated>
     <content type="html"><![CDATA[<p>说到Javascript事件，脑海中闪现的是最初做简单网页时写个button，注册个onclick事件，就出现了简单的交互。那么onclick，和后续接触到的原生JS中的DOM0、DOM2、addEventListener、attachEvent、jQuery中的bind、live、delegate、on等是什么关系，如何演化的。一个简单的onclick为什么会发展成复杂的jQuery事件系统以及数据缓存系统。今天只是一个引子：</p>
 <h2 id="DOM0级事件系统">DOM0级事件系统</h2>
 <pre><code>document.getElementById(<span class="string">"btn"</span>).onclick = <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
@@ -387,7 +780,7 @@ fixEvent.stopPropagation = <span class="function"><span class="keyword">function
     <link href="http://yoursite.com/2014/09/03/per-gototop/"/>
     <id>http://yoursite.com/2014/09/03/per-gototop/</id>
     <published>2014-09-03T05:24:37.000Z</published>
-    <updated>2014-09-26T06:29:17.000Z</updated>
+    <updated>2015-02-13T06:21:28.000Z</updated>
     <content type="html"><![CDATA[<p>当我用Macbook浏览长网页的时候，拉着拉着就得找&lt;回到顶部&gt;按钮。如果网页没有这个功能，就得自己拖回滚动条。为了更美观不碍眼，滚动条早已在不用的时候就隐藏起来，需要上下移动网页才显示，再将鼠标移动到小窄条上，左右手配合拖回顶部，真费劲。还不如在网页的鼠标右键上增加&lt;回到顶部&gt;的功能，单手操作两次点击即可。不如来个彻底，将&lt;回到顶部&gt;功能交给浏览器来做，顺便做个快捷键，也免得前端开发人员到处搞个&lt;回到顶部&gt;，或者什么时候闲来无事，搞个浏览器插件gotoTop，看看有没有人用。<a id="more"></a></p>
 ]]></content>
     <summary type="html">
@@ -404,7 +797,7 @@ fixEvent.stopPropagation = <span class="function"><span class="keyword">function
     <link href="http://yoursite.com/2014/08/18/per-hk/"/>
     <id>http://yoursite.com/2014/08/18/per-hk/</id>
     <published>2014-08-18T15:40:58.000Z</published>
-    <updated>2014-09-26T16:02:41.000Z</updated>
+    <updated>2015-02-13T06:21:28.000Z</updated>
     <content type="html"><![CDATA[<p>不想流水账一样写一篇攻略，如果有需要咨询的同学可以留言，必将知无不言，言无不尽。不想写”香港是自由与信念的国度“这样上纲上线的文章，只是就自己的所见发表一些所感。之前大Boss说我的视野有限，再不出去见识见识，就无法跟我交流了。我转了一圈回来了，恐怕也不能如他所愿感受到“外面的世界很精彩”。</p>
 <p><img src="/img/HK1.jpg" alt="车窗外的风景"></p>
 <p>自由：</p>
@@ -439,7 +832,7 @@ fixEvent.stopPropagation = <span class="function"><span class="keyword">function
     <link href="http://yoursite.com/2014/07/26/per-rest/"/>
     <id>http://yoursite.com/2014/07/26/per-rest/</id>
     <published>2014-07-25T16:04:40.000Z</published>
-    <updated>2014-09-26T16:19:22.000Z</updated>
+    <updated>2015-02-13T06:21:28.000Z</updated>
     <content type="html"><![CDATA[<p>在我正式休长假之前，有几周是双休的，为了缓和三年来的单休日子，让身体和心态从满负荷到倍轻松有一个缓冲。只是我有一个隐忧：周一正式开始工作的时候，总是需要1～2小时的“代入”，想一个很熟悉的CSS属性也慢了几秒钟。也许这是由休息进入工作状态避免不了的消耗。那休长假玩疯了之后如何开始工作？如何准备面试？认真地思考这个问题，是从我被电话面试问到我都面试过别人很多遍的必备技能时却语无伦次开始。我相信，我能回答的问题确实是我大脑深处印象最深的经历，不需要任何准备和“代入”便脱口而出，就像存储到大脑内存中一样。而我无法在任意时间内均可以解释清楚的问题是一遍又一遍备份到大脑硬盘中的，所以它不能像在内存中一样快速读取。</p>
 <p>我想说的重点是两个:</p>
 <blockquote>
@@ -479,7 +872,7 @@ fixEvent.stopPropagation = <span class="function"><span class="keyword">function
     <link href="http://yoursite.com/2014/06/30/web-yahootech2/"/>
     <id>http://yoursite.com/2014/06/30/web-yahootech2/</id>
     <published>2014-06-30T05:06:38.000Z</published>
-    <updated>2014-09-29T06:19:04.000Z</updated>
+    <updated>2015-02-13T06:21:28.000Z</updated>
     <content type="html"><![CDATA[<p><img src="/img/yahooTech1.jpg" alt="雅虎科技"></p>
 <p>上一篇主要从外观上介绍了YahooTech的布局方式，本篇着重代码实现。代码实现经历了两个版本，以下是V1.0的算法：</p>
 <p>1、 每张图片的宽度都设置为百分比，当屏幕resize时不需要额外处理。<br>2、 受启发于媒体查询根据屏幕宽度设置多种区间匹配样式，故设置0~320、320~1024、1024～1600、1600~+∞四个区间。</p>
@@ -698,7 +1091,7 @@ layoutBlock : <span class="function"><span class="keyword">function</span><span 
     <link href="http://yoursite.com/2014/06/26/per-resign/"/>
     <id>http://yoursite.com/2014/06/26/per-resign/</id>
     <published>2014-06-26T05:40:12.000Z</published>
-    <updated>2014-09-29T06:37:40.000Z</updated>
+    <updated>2015-02-13T06:21:28.000Z</updated>
     <content type="html"><![CDATA[<p>猛然间一抬眼，眼睛虚幻得看不清程哥的脸，才意识到自己应该休息，盯着屏幕太久了；<br>目不转睛思索问题，突然左耳一阵嗡响，才意识到自己应该休息，集中精力太久了；<br>纠结于一个文件的命名或是代码结构不够优雅，论坛上在讨论velocity、underscore、方案选型等千奇百怪的问题，才意识到自己应该休息，归零来看看更广阔的世界；</p>
 <p>3年前，为自己从一成不变矮挫丑的软件界面转移到五彩斑斓酷炫拽的web前端而兴奋不已，那种兴奋能让你听一次便记住一个色值、书本上的知识一下子就找到了用武之地，一个F12就能清清楚楚地看到代码的来龙去脉，透明没有伪装。但那时写代码就像滑冰，说不定哪一脚不稳就摔了个底朝天，上线前总会把改过的代码都过一遍，可能出现的问题和解决方法都实验一遍，不能做到百分百无bug也要能尽快修复。真的，每一步都可能摔倒，每一句代码都可能出错。</p>
 <p>如果不是眼下前端小妹的代码上线后出现问题导致部分恢复的事情，我已经忘记了当初的如履薄冰。现在骄傲到不指望QA的测试，上线出现问题也义正言辞地说不是代码级别的问题，为了实现类YahooTech的纯图片展示方式，断断续续研究了一个星期YahooTech混淆后的代码（你研究过就知道，那不是人看的），在终于要大功告成的时候窗口resize layout出现问题，花费半个小时用一行代码搞定。一行代码能成事，也能坏事。</p>
@@ -719,7 +1112,7 @@ layoutBlock : <span class="function"><span class="keyword">function</span><span 
     <link href="http://yoursite.com/2014/05/29/web-header/"/>
     <id>http://yoursite.com/2014/05/29/web-header/</id>
     <published>2014-05-29T05:45:56.000Z</published>
-    <updated>2014-09-27T05:51:18.000Z</updated>
+    <updated>2015-02-13T06:21:28.000Z</updated>
     <content type="html"><![CDATA[<p>这种效果在原生APP中处处可见。向下滚动时意味着用户在寻求更多的内容，同时手机端可视区域有限，故将头部隐藏以展示更多的内容真是一件体验美好的事；向上滚动时，用户可能在寻找其他操作，故显示头部。这本身也是响应式设计的体现。今天，我们尝试把这种效果迁移到web端。</p>
 <p><strong>首先、头部固定</strong></p>
 <pre><code><span class="tag">body</span> {
@@ -814,7 +1207,7 @@ setInterval(<span class="function"><span class="keyword">function</span><span cl
     <link href="http://yoursite.com/2014/05/14/web-yahootech1/"/>
     <id>http://yoursite.com/2014/05/14/web-yahootech1/</id>
     <published>2014-05-13T16:25:12.000Z</published>
-    <updated>2014-09-29T06:18:19.000Z</updated>
+    <updated>2015-02-13T06:21:28.000Z</updated>
     <content type="html"><![CDATA[<p>题外话：希望有一天做东西不再用“仿”这个字。<br>首次看到<a href="https://www.yahoo.com/tech" title="yahooTech" target="blank">雅虎科技</a>的页面，我想到的是这几个词，全屏、大胆、横向瀑布流、随机、没什么大不了的。仔细研究了一下它的页面布局之后，发现了几个细节：</p>
 <ol>
 <li><p>每行显示的图片数量和布局是否有规律？</p>
@@ -889,7 +1282,7 @@ Class(<span class="string">"DataPool"</span>, com.lifeix.event.Listener, {
     <link href="http://yoursite.com/2014/03/29/h5-collapse/"/>
     <id>http://yoursite.com/2014/03/29/h5-collapse/</id>
     <published>2014-03-29T05:02:33.000Z</published>
-    <updated>2014-09-29T12:07:03.000Z</updated>
+    <updated>2015-02-13T06:21:28.000Z</updated>
     <content type="html"><![CDATA[<p>最近的工作都转移到移动开发中，针对主站www.l99.com开发一套移动端版本，像之前写的《webapp立方没体诞生之初》、《单页应用中页面转场的实现》都是针对此项目。</p>
 <p>借此谈谈对原生APP和HTML5 WEBAPP的看法，关于各有千秋、根据项目需求的说法谁都会说，不能否认的是，HTML5在一段时间内无法与原生APP抗衡，在用户体验、速度、流量上都只能望其项背。但其表现出来的优势也越来越显著，无需审核、无需安装、跨平台（不需开发iphone和android两中版本）。在之前的PC时代，不也是安装各种管理信息系统、杀毒软件、音乐播放工具、输入法等等，而现在越来越倾向于访问网站、在线收听、云服务。这是一个趋势，但是需要多长时间达到成熟的状态还未可知。毕竟Facebook在2012年期间舍弃原本实行的HTML5架构，转而打造原生APP。不过，你可以看到这个趋势的推进，ios7的safari增加了隐藏地址栏和底部导航的功能，使WEBAPP拥有了与原生APP同样的空间。</p>
 <p>从开发角度来看，webapp和浏览器依然扮演着同PC端相同的角色，一个负责布局样式功能的代码实现，一个负责解析渲染和交互，这些都只停留在单个页面内，一个url访问一个页面，点击链接跳转到另一页面。而对于页面间的布局和转场还鲜有涉及，没有系统或浏览器接口可供调用。要想达到原生app的体验效果，需要类似一种中间层的解决方案。其实这应该是HTML5持续推进的方向，它增加了<code>&lt;section</code>&gt;<code>&lt;article</code>&gt;<code>&lt;video</code>&gt;<code>&lt;audio</code>&gt;等各种语义化的标签，为什么没有增加<code>&lt;page</code>&gt;?这个标签一出现将会改变单一页面的格局，一个页面可能拥有多个page，并定义多个page的切换效果，浏览器就去实现吧。开发人员就又轻松了。好吧，这些都是意淫，话说回来，现在什么都没有，还是得自己开发呀。今天说说菜单如何左右折叠，效果嘛，原生APP中处处可见。这种把导航菜单折叠后隐藏起来的信息组织方式几乎成了原生APP的设计范式。</p>
@@ -963,7 +1356,7 @@ Class(<span class="string">"DataPool"</span>, com.lifeix.event.Listener, {
     <link href="http://yoursite.com/2014/03/17/seajs-source/"/>
     <id>http://yoursite.com/2014/03/17/seajs-source/</id>
     <published>2014-03-17T05:53:07.000Z</published>
-    <updated>2014-09-27T06:03:29.000Z</updated>
+    <updated>2015-02-13T06:21:28.000Z</updated>
     <content type="html"><![CDATA[<p>关于seajs的源码解析玉伯自己也只写了两篇<a href="http://chuansongme.com/n/124571" target="_blank" rel="external">http://chuansongme.com/n/124571</a>、<a href="http://chuansongme.com/n/126184" target="_blank" rel="external">http://chuansongme.com/n/126184</a>，去年订阅他的微信号后就已拜读过。讲述了目录结构、大闭包等这些表面的细节，还未真正写到精髓，就没有了。最近项目中应用了seajs，模块化改造也并不复杂，腾出时间专门看看源码。<br>下载个seajs，src目录如下：</p>
 <pre><code><span class="comment">src</span>
 <span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">intro</span><span class="string">.</span><span class="comment">js</span>             <span class="literal">-</span><span class="literal">-</span> <span class="comment">全局闭包头部</span>
@@ -979,18 +1372,25 @@ Class(<span class="string">"DataPool"</span>, com.lifeix.event.Listener, {
 <span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">config</span><span class="string">.</span><span class="comment">js</span>            <span class="literal">-</span><span class="literal">-</span> <span class="comment">配置</span>
 <span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">outro</span><span class="string">.</span><span class="comment">js</span>             <span class="literal">-</span><span class="literal">-</span> <span class="comment">全局闭包尾部</span>
 </code></pre><p>Dist目录中的sea-debug.js就是上述文件按顺序合并而成，未压缩代码行900+，按模块回顾下吧。</p>
-<p>intro.js，只是一个包装而且是个上包装，下包装见outro.js。</p>
+<p>（一）intro.js，只是一个包装而且是个上包装，下包装见outro.js。</p>
 <pre><code>(<span class="function"><span class="keyword">function</span><span class="params">(global, undefined)</span> {</span>
     <span class="keyword">if</span> (<span class="keyword">global</span>.seajs) {
         <span class="keyword">return</span>
     }
-</code></pre><p>sea.js，确保全局环境中只有一个seajs，events、。。。等均保存在data中。</p>
+</code></pre><p>jQuery的包装器基本也是这样：</p>
+<pre><code>(<span class="keyword">function</span>(window, undefined) {
+    var jQuery ＝  <span class="keyword">...</span>
+    <span class="keyword">...</span>
+    window.jQuery = window.$ = jQuery;
+})(window);
+</code></pre><p>注意四点：<br>1、自调用匿名函数创建了一个闭包，该作用域中的代码不会破坏和污染全局变量，这是任何一个javascript库所必备的功能。<br>2、jQuery传递是window参数，seajs传递的是global参数，作者说，“在浏览器环境中，global 是 window 对象。在 Node.js 环境中，global 则是 node 环境中的 global 对象。这是一个跨平台的兼容式写法。”<br>3、传入undefined参数是为了确保undefined的值是undefined，避免被低版本浏览器通过window.undefined＝“”这样的赋值语句重写。<br>4、传入window、undefined参数有一个共通原因是可以使其变为局部变量，这样在jQuery代码块中访问它时，不需要将作用域回退到顶层作用域，更快地访问到window对象。同时局部变量可以进行压缩优化，压缩为一个字符，也省不少字节。</p>
+<p>（二）sea.js，确保全局环境中只有一个seajs，events、。。。等均保存在data中。</p>
 <pre><code><span class="built_in">var</span> seajs <span class="subst">=</span> <span class="built_in">global</span><span class="built_in">.</span>seajs <span class="subst">=</span> {
     <span class="comment">// The current version of Sea.js being used</span>
     version: <span class="string">"2.1.1"</span>
 }
 <span class="built_in">var</span> <span class="built_in">data</span> <span class="subst">=</span> seajs<span class="built_in">.</span><span class="built_in">data</span> <span class="subst">=</span> {}
-</code></pre><p>util-lang.js</p>
+</code></pre><p>（三）util-lang.js</p>
 <pre><code><span class="function"><span class="keyword">function</span> <span class="title">isType</span><span class="params">(type)</span> {</span>
     <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(obj)</span> {</span>
         <span class="keyword">return</span> <span class="built_in">Object</span>.prototype.toString.call(obj) === <span class="string">"[object "</span> + type + <span class="string">"]"</span>
@@ -1005,12 +1405,29 @@ Class(<span class="string">"DataPool"</span>, com.lifeix.event.Listener, {
 <span class="function"><span class="keyword">function</span> <span class="title">cid</span><span class="params">()</span> {</span>
     <span class="keyword">return</span> _cid++
 }
-</code></pre><p>util-events.js,简单事件机制包括绑定、解绑、触发。</p>
-<pre><code>var <span class="keyword">events</span> = <span class="transposed_variable">data.</span><span class="keyword">events</span> = <span class="cell">{}</span>
-<span class="transposed_variable">seajs.</span>on = <span class="function"><span class="keyword">function</span><span class="params">(name, callback)</span> {}</span>
-<span class="transposed_variable">seajs.</span>off = <span class="function"><span class="keyword">function</span><span class="params">(name, callback)</span> {}</span>
-var emit = <span class="transposed_variable">seajs.</span>emit = <span class="function"><span class="keyword">function</span><span class="params">(name, data)</span> {}</span>
-</code></pre><p>util-path.js</p>
+</code></pre><p>先举例说明一下如何做类型检测：</p>
+<pre><code>var a = <span class="string">"aa"</span><span class="comment">;</span>
+console<span class="preprocessor">.log</span>(Object<span class="preprocessor">.prototype</span><span class="preprocessor">.toString</span><span class="preprocessor">.call</span>(a)) //[object String]
+var a = <span class="number">123</span><span class="comment">;</span>
+console<span class="preprocessor">.log</span>(Object<span class="preprocessor">.prototype</span><span class="preprocessor">.toString</span><span class="preprocessor">.call</span>(a)) //[object Number]
+var a = [<span class="string">"aa"</span>]<span class="comment">;</span>
+console<span class="preprocessor">.log</span>(Object<span class="preprocessor">.prototype</span><span class="preprocessor">.toString</span><span class="preprocessor">.call</span>(a)) //[object Array]
+var a = function(){}<span class="comment">;</span>
+console<span class="preprocessor">.log</span>(Object<span class="preprocessor">.prototype</span><span class="preprocessor">.toString</span><span class="preprocessor">.call</span>(a)) //[object Function]
+var a = {}<span class="comment">;</span>
+console<span class="preprocessor">.log</span>(Object<span class="preprocessor">.prototype</span><span class="preprocessor">.toString</span><span class="preprocessor">.call</span>(a)) //[object Object]
+</code></pre><p>原来这么简单，将变量转变成字符串就可以打印出其类型。有没有觉得isType函数有些特别，接受一个type参数，其内部返回一个接受obj参数的匿名函数。为什么不直接定义一个isType函数，传递type、obj两个参数，判断此obj是不是type类型，多好理解。哎，不要乱想，这可是javascript高级技巧——柯里化，柯里化就是把接受多个参数的函数换成接受单一参数的函数，并返回接受余下的参数的新函数的技术。以后写代码也试试这酷炫吊的技巧。</p>
+<p>（四）util-events.js,简单事件机制包括绑定、解绑、触发。</p>
+<pre><code><span class="keyword">var</span> events = data.events = {}
+seajs.on = <span class="function"><span class="keyword">function</span><span class="params">(name, callback)</span> {</span>
+    <span class="keyword">var</span> <span class="keyword">list</span> = events[name] || (events[name] = []);
+    <span class="keyword">list</span>.push(callback);
+    <span class="keyword">return</span> seajs;
+}
+seajs.off = <span class="function"><span class="keyword">function</span><span class="params">(name, callback)</span> {</span>}
+<span class="keyword">var</span> emit = seajs.emit = <span class="function"><span class="keyword">function</span><span class="params">(name, data)</span> {</span>}
+</code></pre><p>1、将事件对象保存到seajs.data.events中；<br>2、每次绑定事件时在seajs.data.events中创建name/callback键值对保存事件的宿主元素和事件处理函数。<br>3、实际应用中主要使用seajs的模块化组织方式，未使用事件绑定功能</p>
+<p>（五）util-path.js</p>
 <pre><code><span class="keyword">var</span> doc = document
 <span class="keyword">var</span> loc = location
 <span class="keyword">var</span> cwd = dirname(loc.href)
@@ -1036,18 +1453,17 @@ var emit = <span class="transposed_variable">seajs.</span>emit = <span class="fu
 
 <span class="comment">// 对外接口</span>
 seajs.resolve = id2Uri
-</code></pre><p>util-request.js</p>
+</code></pre><p>(六)util-request.js</p>
 <pre><code>//创建<span class="tag">&lt;<span class="title">link</span>&gt;</span>或<span class="tag">&lt;<span class="title">script</span>&gt;</span><span class="javascript">标签，预加载后插入到页面中。
 <span class="function"><span class="keyword">function</span> <span class="title">request</span><span class="params">(url, callback, charset)</span> {</span>}
 <span class="function"><span class="keyword">function</span> <span class="title">getCurrentScript</span><span class="params">()</span> {</span>}</span>
-</code></pre><p>util-deps.js，只有一个函数，用于提取每个模块中require的文件</p>
+</code></pre><p>（七）util-deps.js，只有一个函数，用于提取每个模块中require的文件</p>
 <pre><code><span class="function"><span class="keyword">function</span> <span class="title">parseDependencies</span><span class="params">(code)</span> {</span>}
-</code></pre><p>module.js 模块化的核心策略</p>
+</code></pre><p>（八）module.js 模块化的核心策略</p>
 <pre><code>seajs.<span class="keyword">use</span> = <span class="function"><span class="keyword">function</span><span class="params">(ids, callback)</span> {</span>
-    <span class="comment">//加载config中的预加载项</span>
+    <span class="comment">//加载config中的预加载项,如jQuery</span>
     Module.preload(<span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
-        <span class="comment">// ids：依赖模块或是模块本身，第三个参数为模块uri，如</span>
-        http:<span class="comment">//www.l99.com/_use_4，为什么要拼凑这样一个uri。</span>
+        <span class="comment">// ids：依赖模块或是模块本身，第三个参数为模块uri，如http://www.l99.com/_use_4，为什么要拼凑这样一个uri。</span>
         Module.<span class="keyword">use</span>(ids, callback, data.cwd + <span class="string">"_use_"</span> + cid())
     })
     <span class="keyword">return</span> seajs
@@ -1073,7 +1489,7 @@ Module.resolve = <span class="function"><span class="keyword">function</span><sp
     <span class="keyword">this</span>._remain = <span class="number">0</span>
 }
 </code></pre><p>。。。<br>这个地方还有很多实质内容没有分析，今天先到这，专注不下去了。<br>。。。</p>
-<p>outro.js，将this传入闭包体global，在浏览器环境中global 是 window 对象。在 Node.js 环境中global 则是 node 环境中的 global 对象</p>
+<p>（九）outro.js，将this传入闭包体global，在浏览器环境中global 是 window 对象。在 Node.js 环境中global 则是 node 环境中的 global 对象</p>
 <pre><code>})(<span class="keyword">this</span>);
 </code></pre>]]></content>
     <summary type="html">
@@ -1089,7 +1505,7 @@ Module.resolve = <span class="function"><span class="keyword">function</span><sp
     <link href="http://yoursite.com/2014/03/01/h5-specs/"/>
     <id>http://yoursite.com/2014/03/01/h5-specs/</id>
     <published>2014-03-01T13:47:27.000Z</published>
-    <updated>2014-10-09T14:00:43.000Z</updated>
+    <updated>2015-02-13T06:21:28.000Z</updated>
     <content type="html"><![CDATA[<h2 id="要求：">要求：</h2>
 <p>兼容各种分辨率下的iPhone和Android设备。</p>
 <h2 id="要点：">要点：</h2>
@@ -1146,7 +1562,7 @@ Module.resolve = <span class="function"><span class="keyword">function</span><sp
     <link href="http://yoursite.com/2014/02/12/js-prototype/"/>
     <id>http://yoursite.com/2014/02/12/js-prototype/</id>
     <published>2014-02-12T07:22:48.000Z</published>
-    <updated>2014-09-27T07:41:06.000Z</updated>
+    <updated>2015-02-13T06:21:28.000Z</updated>
     <content type="html"><![CDATA[<p>一过年吃了许多肉，见了许多人，又思考了许多人生大事，中了年后综合症的招，唯恐脑子不再灵光，荒废专业。特意把基础知识再梳理一下：</p>
 <h3 id="一、简单原型链：构造函数、原型、实例">一、简单原型链：构造函数、原型、实例</h3>
 <p><img src="/img/prototype1.png" alt="简单原型链"><br>这是Nicholas C. Zakas的《Javascript高级程序设计》P120的截图。有一个前端朋友说，他曾经怎么都不理解原型链直到看到此书此章节才如醍醐灌顶。我想，看一遍就领悟恐怕也是神人了。</p>
@@ -1250,7 +1666,7 @@ Animal.prototype = {
     <link href="http://yoursite.com/2014/02/06/h5-pagetransition/"/>
     <id>http://yoursite.com/2014/02/06/h5-pagetransition/</id>
     <published>2014-02-06T07:42:46.000Z</published>
-    <updated>2014-09-27T08:09:55.000Z</updated>
+    <updated>2015-02-13T06:21:28.000Z</updated>
     <content type="html"><![CDATA[<p>在上上篇文章《webapp立方没体诞生之初》中提到，移动框架只使用了Boostrap，但后来迫于页面转场效果，自定义build了jquery mobile的Animated page Transitions部分功能，60多k的代码也让人唏嘘。于是，剖析源码，尝试简化。</p>
 <p><img src="/img/pageTransition1.png" alt="页面转场"></p>
 <p>在看源码之前思考一下自己如何实现：</p>
@@ -1359,7 +1775,7 @@ Animal.prototype = {
     <link href="http://yoursite.com/2014/01/20/read-team/"/>
     <id>http://yoursite.com/2014/01/20/read-team/</id>
     <published>2014-01-20T08:11:26.000Z</published>
-    <updated>2014-09-27T08:17:45.000Z</updated>
+    <updated>2015-02-13T06:21:28.000Z</updated>
     <content type="html"><![CDATA[<p>最近在看一本书《在你身边为你设计》，出自腾讯CDC团队（用户研究与体验设计中心）的结集文章。看书如见人，通过不同文章的观点和看问题的角度对各个作者的专业方向和管理层级也略知一二。个人更喜欢唐沐的文章，他是腾讯CDC团队的创始人，给大家缕一下这个团队从无到有的过程。</p>
 <h3 id="1-_2003年4月入职UI设计组">1. 2003年4月入职UI设计组</h3>
 <p>唐沐入职腾讯可以说是天时地利，当时QQ作为腾讯唯一的重要产品刚刚完成了原始积累——用户数达到了一个量级，用户对产品的需求也刚刚从满足基本功能转变到追求更好的UI体验。其次，唐沐在大学辅修过工业设计，重要的是在金山练就软件产品UI设计的思路和技能，这些成为在腾讯开展用户体验设计的基石。</p>
@@ -1395,7 +1811,7 @@ Animal.prototype = {
     <link href="http://yoursite.com/2014/01/08/h5-webapp/"/>
     <id>http://yoursite.com/2014/01/08/h5-webapp/</id>
     <published>2014-01-08T08:18:31.000Z</published>
-    <updated>2014-09-27T08:21:08.000Z</updated>
+    <updated>2015-02-13T06:21:28.000Z</updated>
     <content type="html"><![CDATA[<p>随着移动设备特别是智能手机的普及，移动应用的市场越发火爆。原生应用以优秀的离线能力、客户端能力（能方便使用手机上的各种终端能力）、高性能、流畅的动画效果大受用户青睐，但仍存在多个系统上的开发、发布、下载使用等瓶颈。而webapp正是为了解决这些不足，同时满足长尾用户的需求。</p>
 <h3 id="1-_准备工作">1. 准备工作</h3>
 <p>在试水立方没体之前，拿登录页面做过实验，在基本不改变设计的情况对web页面结构进行简化或隐藏，注意是对同一套代码进行响应式实现，可想而知，这种方式的结果就如同粗放地减枝，效果不好。当时一直犹豫不决地是使用响应式（兼容各种PC、移动设备）还是为移动设备专门做一套页面结构？显然，前者是完美的，后者是现实的。接着研究了知乎和qzone，恰巧知乎使用的是“完美”方案，而qq空间使用的“现实”方案。鉴于立方网复杂的页面设计，选择后者更明智。</p>
@@ -1422,7 +1838,7 @@ Animal.prototype = {
     <link href="http://yoursite.com/2013/12/12/js-snowflake/"/>
     <id>http://yoursite.com/2013/12/12/js-snowflake/</id>
     <published>2013-12-12T08:22:52.000Z</published>
-    <updated>2014-09-27T08:45:24.000Z</updated>
+    <updated>2015-02-13T06:21:28.000Z</updated>
     <content type="html"><![CDATA[<p>当我查找MVC、MVP、MVVM这些设计模式相关资料时，发现了这个背景效果——飘雪——做得还不错的网站，<a href="http://nirajrules.wordpress.com/2009/07/18/mvc-vs-mvp-vs-mvvm/" target="_blank" rel="external">http://nirajrules.wordpress.com/2009/07/18/mvc-vs-mvp-vs-mvvm/</a>，如果你不能打开链接，就悲剧了，“墙”里难见“墙”外花。于是，从该站点剥离出纯粹实现此动画的代码，制作demo如链接（忙啊！！还没传上去）。</p>
 <p>我们会发现一些细节，鼠标移动的轨迹控制了风向和风速，从而控制雪花的方向和速度；当前tab不是活动tab时动画停止，避免过度绘制。说说你实现该效果的思路，或是关键词。定时器？运动轨迹？边际检测？我们先按照自己的思路一步一步走，再结合它的代码修正。</p>
 <ol>
@@ -1624,175 +2040,6 @@ getAnimationFrame = _animationFrame ? <span class="reserved">function</span>() {
     </summary>
     
       <category term="js动画 css3 requestAnimationFrame 雪花动画" scheme="http://yoursite.com/tags/js%E5%8A%A8%E7%94%BB-css3-requestAnimationFrame-%E9%9B%AA%E8%8A%B1%E5%8A%A8%E7%94%BB/"/>
-    
-  </entry>
-  
-  <entry>
-    <title><![CDATA[跨域请求如何破]]></title>
-    <link href="http://yoursite.com/2013/11/29/js-crossdomain/"/>
-    <id>http://yoursite.com/2013/11/29/js-crossdomain/</id>
-    <published>2013-11-29T08:46:33.000Z</published>
-    <updated>2014-09-27T11:48:09.000Z</updated>
-    <content type="html"><![CDATA[<p>近日，前端在尝试跨域请求API，接受纯粹的JSON数据，绕过后端大婶们，他们总是这个不能做，那个影响性能。但是，请求一开始就报错，跨域总是这么屌，轻易让你搞定，就不是他的范儿。<br>先看一下错误信息：</p>
-<p>Chrome：Uncaught SyntaxError: Unexpected token :</p>
-<p>Firefox：<img src="/img/crossdomain1.png" alt="跨域请求"></p>
-<p>代码：</p>
-<pre><code>$.ajax({
-        async: <span class="literal">true</span>,
-        url: <span class="string">'http://dbapi.xy.l99.com/dovebox/pintimes/mediatype'</span>,
-        dataType: <span class="string">'jsonp'</span>,
-        data:{media_type: <span class="number">0</span>, limit: <span class="number">20</span>},
-        method: <span class="string">"GET"</span>,
-        error: <span class="function"><span class="keyword">function</span> <span class="params">(jqXHR, textStatus, errorThrown)</span>{</span>
-              <span class="comment">//……;</span>
-        },
-        success: <span class="function"><span class="keyword">function</span> <span class="params">(data, textStatus, jqXHR)</span> {</span>
-               <span class="comment">//……;</span>
-        }
-});
-</code></pre><p>从Firefox的错误信息来看，是数据格式的问题，而返回的JSON数据肯定不存在问题。根据stackoverflow上的说法把dataType从“jsonp”替换成“json”，或在url后面加上callback=?等等都不能解决。我想到的种种错误可能都不是，那肯定是后端的问题了。但是，这个理由是不能拿出去跟后端程序员说的，除非告诉他错误在哪，继续调查下。</p>
-<p>我们知道，跨域请求本质上并不是ajax，而是创建了script标签，将请求地址赋给src，因为script标签可以无条件执行，不受限于同源策略。于是，尝试在页面上增加：</p>
-<pre><code><span class="tag">&lt;<span class="title">script</span> <span class="attribute">type</span>=<span class="value">"text/javascript"</span> <span class="attribute">src</span>=<span class="value">"http://dbapi.xy.l99.com/dovebox/pintimes/mediatype"</span> &gt;</span><span class="javascript"></span><span class="tag">&lt;/<span class="title">script</span>&gt;</span>
-</code></pre><p>猜猜结果如何？</p>
-<p>报了同样的错误信息，不难得知，浏览器加载了这个假的“js文件”，但是执行的时候发现这段代码并不符合js语法，所以报了以上错误。</p>
-<p>回到跨域请求的本质上来，后端在返回数据时需要在数据外层包装一个函数，函数名由前端传递，默认是jquery+随机数。包装函数的目的一方面是使其符合js语法，另一方面是将数据以参数形式传递过来，方便获取。除了包装函数，还有其他办法吗？把数据赋给一个变量岂不是更方便？有机会可以再实现一下跨域请求。</p>
-<p>那到底是不是后端未处理的原因？我们用fiddler模拟返回数据看看。</p>
-<pre><code>$.ajax({
-        async: <span class="literal">true</span>,
-        url: <span class="string">'http://dbapi.xy.l99.com/dovebox/pintimes/mediatype'</span>,
-        dataType: <span class="string">'jsonp'</span>,
-        jsonpCallback: <span class="string">"aa"</span>, 
-        data:{media_type: <span class="number">0</span>, limit: <span class="number">20</span>},
-        method: <span class="string">"GET"</span>,
-        error: <span class="function"><span class="keyword">function</span> <span class="params">(jqXHR, textStatus, errorThrown)</span>{</span>
-              <span class="comment">//……;</span>
-        },
-        success: <span class="function"><span class="keyword">function</span> <span class="params">(data, textStatus, jqXHR)</span> {</span>
-               <span class="comment">//……;</span>
-        }
-});
-</code></pre><p>由于在请求中添加callback=?会导致函数名随机生成，不易控制，所以自定义一个：jsonpCallback: “aa”,</p>
-<p>在fiddler中设置规则，当请求某个URL时，返回本地数据（特别增加了函数包装）。</p>
-<pre><code>aa({<span class="string">"status"</span>:<span class="string">"1"</span>,<span class="string">"code"</span>:<span class="string">"200"</span>,<span class="string">"data"</span>:{<span class="attribute">...</span><span class="attribute">...</span>}});
-</code></pre><p><img src="/img/crossdomain1.png" alt="跨域请求"><br>果然，一切搞定。API啊，API，你竟然不支持跨域请求？？？！！！！</p>
-<p>最后，我们还是从jquery源码中走一下跨域请求的流程~~<br>请求入口：</p>
-<pre><code>transport.send( requestHeaders, done );
-<span class="regexp">//</span> requestHeaders <span class="symbol">:<span class="string">"{"</span>Accept<span class="string">":"</span>text</span>, text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, *<span class="regexp">/*; q=0.01"}"</span>
-</code></pre><p>发送请求的本质：</p>
-<pre><code><span class="label">send:</span> function( _, callback ) {
-    script = document<span class="preprocessor">.createElement</span>(<span class="string">"script"</span>)<span class="comment">;</span>
-    script<span class="preprocessor">.async</span> = true<span class="comment">;</span>
-    if ( s<span class="preprocessor">.scriptCharset</span> ) {
-        script<span class="preprocessor">.charset</span> = s<span class="preprocessor">.scriptCharset</span><span class="comment">;</span>
-    }
-    script<span class="preprocessor">.src</span> = s<span class="preprocessor">.url</span><span class="comment">;</span>
-    // Attach handlers for all browsers
-    script<span class="preprocessor">.onload</span> = script<span class="preprocessor">.onreadystatechange</span> = function( _, isAbort ) {                    
-        if ( isAbort || !script<span class="preprocessor">.readyState</span> || /loaded|complete/<span class="preprocessor">.test</span>( script<span class="preprocessor">.readyState</span> ) ) {
-            // Handle memory leak <span class="keyword">in</span> IE
-            script<span class="preprocessor">.onload</span> = script<span class="preprocessor">.onreadystatechange</span> = null<span class="comment">;</span>
-            // Remove the script
-            if ( script<span class="preprocessor">.parentNode</span> ) {
-                script<span class="preprocessor">.parentNode</span><span class="preprocessor">.removeChild</span>( script )<span class="comment">;</span>
-            }
-            alert(script<span class="preprocessor">.innerHTML</span>)<span class="comment">;</span>
-            // Dereference the script
-            script = null<span class="comment">;</span>
-            // Callback if not abort
-            if ( !isAbort ) {
-                callback( <span class="number">200</span>, <span class="string">"success"</span> )<span class="comment">;</span>
-            }
-        }
-    }<span class="comment">;</span>
-    // Circumvent IE6 bugs with base elements (<span class="preprocessor">#2709 and #4378) by prepending</span>
-    // Use native DOM manipulation to avoid our domManip AJAX trickery
-    head<span class="preprocessor">.insertBefore</span>( script, head<span class="preprocessor">.firstChild</span> )<span class="comment">;</span>
-}
-</code></pre><p>执行js代码：</p>
-<pre><code>window[ callbackName ] = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
-    responseContainer = <span class="built_in">arguments</span>;
-};
-</code></pre><p>预先注册了window[“aa”] = function(){};当假的js加载后立即执行此函数，将参数保存到变量responseContainer中。然后进入onload回调函数，后续会将responseContainer返回给response对象，以及错误处理等等。</p>
-<p>结论：出现文章开头的错误信息，是由于后端没有做跨域处理（这句话是给看了开头直接看结尾的人的）。</p>
-]]></content>
-    <summary type="html">
-    <![CDATA[<p>近日，前端在尝试跨域请求API，接受纯粹的JSON数据，绕过后端大婶们，他们总是这个不能做，那个影响性能。但是，请求一开始就报错，跨域总是这么屌，轻易让你搞定，就不是他的范儿。<br>先看一下错误信息：</p>
-<p>Chrome：Uncaught SyntaxError:]]>
-    </summary>
-    
-      <category term="跨域 jquery跨域" scheme="http://yoursite.com/tags/%E8%B7%A8%E5%9F%9F-jquery%E8%B7%A8%E5%9F%9F/"/>
-    
-  </entry>
-  
-  <entry>
-    <title><![CDATA[无缝滚动能有多麻烦]]></title>
-    <link href="http://yoursite.com/2013/11/23/js-marquee/"/>
-    <id>http://yoursite.com/2013/11/23/js-marquee/</id>
-    <published>2013-11-23T11:49:49.000Z</published>
-    <updated>2014-09-27T11:59:36.000Z</updated>
-    <content type="html"><![CDATA[<p>实现无缝滚动是前端的必备技能，每次实现也都是小打小闹，这次是在N1、N2、N3的条件下实现，下次在N2、N3、N4的条件下实现，套路大同小异。近期做了个内容动态加载、图文混排的无缝滚动，比以前多了些看点，遂由浅入深，一一道来。</p>
-<h3 id="一、marquee标记">一、marquee标记</h3>
-<pre><code><span class="tag">&lt;<span class="title">marqueen</span>&gt;</span>标记可以实现文字滚动，但是不能实现无缝滚动。
-<span class="tag">&lt;<span class="title">marquee</span> <span class="attribute">direction</span>=<span class="value">left</span> <span class="attribute">scrollamount</span>=<span class="value">2</span> <span class="attribute">onmouseover</span>=<span class="value">"this.stop();"</span> 
-<span class="attribute">onmouseout</span>=<span class="value">"this.start();"</span> <span class="attribute">width</span>=<span class="value">100</span> <span class="attribute">height</span>=<span class="value">100</span>&gt;</span>
-    中文为什么就不行
-<span class="tag">&lt;/<span class="title">marquee</span>&gt;</span>
-</code></pre><p>Direction设置活动字幕的滚动方向，scrollamount设置文字的滚动速度。<br>onMouseOut=”this.start()” ：用来设置鼠标移出该区域时继续滚动<br>onMouseOver=”this.stop()”：用来设置鼠标移入该区域时停止滚动<br>behavior设置滚动方式，align设置对齐方式等，属性很多，但是致命伤是不能实现无缝滚动。</p>
-<h3 id="二、JS障眼法">二、JS障眼法</h3>
-<p>仍然以横向滚动为例，通常情况下，显示范围的宽度肯定小于内容的宽度，才有滚动显示的必要。红色框为内容显示框。为了使滚动文字的首尾相接，要使用两个放有相同内容的div。<br><img src="/img/marquee1.png" alt="跨域请求"></p>
-<p>红色框固定不动，每次当第二个div内容滚动到末尾时，要模拟成第一个div滚动到末尾的情况，这样，第二个div就可以无缝跟上。<br><img src="/img/marquee2.png" alt="跨域请求"></p>
-<p>模拟成：</p>
-<p><img src="/img/marquee3.png" alt="跨域请求"></p>
-<p>结构代码：</p>
-<pre><code>&lt;<span class="keyword">div</span> <span class="property">id</span>=<span class="string">"dvvv"</span> style=<span class="string">"overflow:hidden;height:27px;width:100px;
-                      border:1px solid red;white-space:nowrap"</span>&gt;
-        &lt;<span class="keyword">div</span> <span class="property">id</span>=<span class="string">"dvvv1"</span> style=<span class="string">"display:inline"</span>&gt;实现文字无缝滚动。&lt;/<span class="keyword">div</span>&gt;
-        &lt;<span class="keyword">div</span> <span class="property">id</span>=<span class="string">"dvvv2"</span> style=<span class="string">"display:inline"</span>&gt;&lt;/<span class="keyword">div</span>&gt;
-&lt;/<span class="keyword">div</span>&gt;
-</code></pre><p>JS代码：</p>
-<pre><code><span class="keyword">var</span> interval=<span class="number">30</span>;
-<span class="keyword">var</span> <span class="variable">$dvvv</span> = document.getElementById(<span class="string">"dvvv"</span>);
-<span class="keyword">var</span> <span class="variable">$dvvv1</span> = document.getElementById(<span class="string">"dvvv1"</span>);
-<span class="keyword">var</span> <span class="variable">$dvvv2</span> = document.getElementById(<span class="string">"dvvv2"</span>);   
-<span class="comment">//内容复制</span>
-<span class="variable">$dvvv2</span>.innerHTML = <span class="variable">$dvvv1</span>.innerHTM;
-<span class="function"><span class="keyword">function</span> <span class="title">Marqpuee</span><span class="params">()</span>{</span>
-    <span class="comment">//此时滚动到第二个div的末尾处，100为显示宽度</span>
-    <span class="keyword">if</span>(<span class="variable">$dvvv</span>.scrollLeft &gt;= <span class="number">2</span> * <span class="variable">$dvvv1</span>.offsetWidth - <span class="number">100</span> ){ 
-<span class="comment">//障眼法来啦！！模拟成第一个div滚到到末尾处。瞬间发生，人眼不太能感受到这种变化</span>
-<span class="variable">$dvvv</span>.scrollLeft = <span class="variable">$dvvv1</span>.offsetWidth - <span class="number">100</span>;
-    }
-     <span class="keyword">else</span>{  
-        <span class="variable">$dvvv</span>.scrollLeft++;
-     }
-}
-<span class="keyword">var</span> MyMar = setInterval(Marqpuee,  interval);
-</code></pre><h3 id="三、实战">三、实战</h3>
-<p>前面都是热身，这时来了一个实时新闻页面，要求向下滚动播放，并不时从后台推送新的战况，如下：<br><img src="/img/marquee4.png" alt="跨域请求"></p>
-<h4 id="1、稍微复杂的图文混排新闻块如何进行DOM拷贝实现障眼法？">1、稍微复杂的图文混排新闻块如何进行DOM拷贝实现障眼法？</h4>
-<p>假设，页面中固定显示区域为10个block，那初始加载可能为20个block，那如果将20个block都进行DOM拷贝，无疑给页面增大了负荷。那么，我们可以只拷贝前10个block，等待20个block都滚动一遍之后，并没有新的数据载入时，继续滚动这10个拷贝，留出时间让前20个block复位。<br><img src="/img/marquee5.png" alt="跨域请求"><br>初始化<br><img src="/img/marquee6.png" alt="跨域请求"><br>滚动到拷贝数据，复位</p>
-<h4 id="2、如何在不刷新页面的情况下，显示后台推送的新闻？（前端可以设置定时器，定时请求新数据）">2、如何在不刷新页面的情况下，显示后台推送的新闻？（前端可以设置定时器，定时请求新数据）</h4>
-<p>考虑一下，新数据应该插在什么位置？显然，拷贝数据是每一轮滚动结束后才显示，以供原始数据复位，那么新数据应该插在拷贝数据之前。又有新问题了，如果刚好滚动到拷贝数据，那用户肯定能看到新数据的插入，页面就不平滑了。所以插入要寻找时机，插入点一定处于可视区域之外：</p>
-<pre><code><span class="comment">// scrollNum:底部滚出数</span>
-<span class="comment">// sum:总数量，包括拷贝数</span>
-<span class="comment">// visibleNum = bakNum:可视数=拷贝数</span>
-<span class="keyword">if</span>(scrollNum &lt; <span class="built_in">sum</span> - visibleNum * <span class="number">2</span>){
-    <span class="comment">//append html</span>
-}
-<span class="keyword">else</span>{
-    setTimeout(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
-            <span class="comment">//append html;s</span>
-    },<span class="transposed_variable">marqueeTimer.</span>interval * visibleNum)
-}
-</code></pre><p>当插入点处于可视区域时，等待拷贝数据滚动完成之后再插入。但要考虑拷贝数据滚动完成所需时间内，没有新的数据推送到前端。否则，需要增加缓冲池缓存数据。</p>
-<h4 id="3、每次插入数据后，还要及时修正容器的scrollTop或margin-top，保证不跳动。">3、每次插入数据后，还要及时修正容器的scrollTop或margin-top，保证不跳动。</h4>
-]]></content>
-    <summary type="html">
-    <![CDATA[<p>实现无缝滚动是前端的必备技能，每次实现也都是小打小闹，这次是在N1、N2、N3的条件下实现，下次在N2、N3、N4的条件下实现，套路大同小异。近期做了个内容动态加载、图文混排的无缝滚动，比以前多了些看点，遂由浅入深，一一道来。</p>
-<h3 id="一、marquee标记]]>
-    </summary>
-    
-      <category term="无缝滚动 marquee" scheme="http://yoursite.com/tags/%E6%97%A0%E7%BC%9D%E6%BB%9A%E5%8A%A8-marquee/"/>
     
   </entry>
   

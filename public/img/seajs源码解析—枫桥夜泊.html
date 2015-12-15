@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>seajs源码解析&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>seajs源码解析</h2><div class="meta">Mar 17 2014</div><p>关于seajs的源码解析玉伯自己也只写了两篇<a href="http://chuansongme.com/n/124571" target="_blank" rel="external">http://chuansongme.com/n/124571</a>、<a href="http://chuansongme.com/n/126184" target="_blank" rel="external">http://chuansongme.com/n/126184</a>，去年订阅他的微信号后就已拜读过。讲述了目录结构、大闭包等这些表面的细节，还未真正写到精髓，就没有了。最近项目中应用了seajs，模块化改造也并不复杂，腾出时间专门看看源码。<br>下载个seajs，src目录如下：</p>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>&mdash;枫桥夜泊</title><link href="/img/favicon.ico" rel="icon"><link rel="alternate" href="/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="/">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article><h2></h2><!DOCTYPE html>
+<!-- saved from url=(0046)http://localhost:4000/2014/03/17/seajs-source/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="author" content="枫桥"><meta name="description"><title>seajs源码解析—枫桥夜泊</title><link href="http://localhost:4000/img/favicon.ico" rel="icon"><link rel="alternate" href="http://localhost:4000/atom.xml" title="枫桥夜泊" type="application/atom.xml"><!--link(href='http://fonts.googleapis.com/css?family=Open+Sans:400', rel='stylesheet')--><!--link(href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,600', rel='stylesheet', type='text/css')--><link rel="stylesheet" href="http://localhost:4000/stylesheets/app.css"></head><body><header id="page-header"><div id="masthead"><h1 id="site-title"><a href="http://localhost:4000/" target="_blank" rel="external">枫桥夜泊</a></h1><p id="site-slogan">梦想走着走着就丢了 只想充实地过每一天 每天都有挑战</p></div></header><section id="content"><article class="post"><h2>seajs源码解析</h2><div class="meta">Mar 17 2014</div><p>关于seajs的源码解析玉伯自己也只写了两篇<a href="http://chuansongme.com/n/124571" target="_blank" rel="external">http://chuansongme.com/n/124571</a>、<a href="http://chuansongme.com/n/126184" target="_blank" rel="external">http://chuansongme.com/n/126184</a>，去年订阅他的微信号后就已拜读过。讲述了目录结构、大闭包等这些表面的细节，还未真正写到精髓，就没有了。最近项目中应用了seajs，模块化改造也并不复杂，腾出时间专门看看源码。<br>下载个seajs，src目录如下：</p>
 <pre><code><span class="comment">src</span>
 <span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">intro</span><span class="string">.</span><span class="comment">js</span>             <span class="literal">-</span><span class="literal">-</span> <span class="comment">全局闭包头部</span>
 <span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">sea</span><span class="string">.</span><span class="comment">js</span>               <span class="literal">-</span><span class="literal">-</span> <span class="comment">基本命名空间</span>
@@ -13,7 +15,7 @@
 <span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">config</span><span class="string">.</span><span class="comment">js</span>            <span class="literal">-</span><span class="literal">-</span> <span class="comment">配置</span>
 <span class="comment">|</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="literal">-</span><span class="comment">outro</span><span class="string">.</span><span class="comment">js</span>             <span class="literal">-</span><span class="literal">-</span> <span class="comment">全局闭包尾部</span>
 </code></pre><p>Dist目录中的sea-debug.js就是上述文件按顺序合并而成，未压缩代码行900+，按模块回顾下吧。</p>
-<p>（一）intro.js，只是一个包装而且是个上包装，下包装见outro.js。</p>
+<p>intro.js，只是一个包装而且是个上包装，下包装见outro.js。</p>
 <pre><code>(<span class="function"><span class="keyword">function</span><span class="params">(global, undefined)</span> {</span>
     <span class="keyword">if</span> (<span class="keyword">global</span>.seajs) {
         <span class="keyword">return</span>
@@ -24,14 +26,13 @@
     <span class="keyword">...</span>
     window.jQuery = window.$ = jQuery;
 })(window);
-</code></pre><p>注意四点：<br>1、自调用匿名函数创建了一个闭包，该作用域中的代码不会破坏和污染全局变量，这是任何一个javascript库所必备的功能。<br>2、jQuery传递是window参数，seajs传递的是global参数，作者说，“在浏览器环境中，global 是 window 对象。在 Node.js 环境中，global 则是 node 环境中的 global 对象。这是一个跨平台的兼容式写法。”<br>3、传入undefined参数是为了确保undefined的值是undefined，避免被低版本浏览器通过window.undefined＝“”这样的赋值语句重写。<br>4、传入window、undefined参数有一个共通原因是可以使其变为局部变量，这样在jQuery代码块中访问它时，不需要将作用域回退到顶层作用域，更快地访问到window对象。同时局部变量可以进行压缩优化，压缩为一个字符，也省不少字节。</p>
-<p>（二）sea.js，确保全局环境中只有一个seajs，events、。。。等均保存在data中。</p>
+</code></pre><p>注意两点：<br>1、自调用匿名函数创建了一个闭包，该作用域中的代码不会破坏和污染全局变量，这是任何一个javasript库所必备的功能。<br>2、jQuery传递是window参数，seajs传递的是global参数，作者说，“在浏览器环境中，global 是 window 对象。在 Node.js 环境中，global 则是 node 环境中的 global 对象。这是一个跨平台的兼容式写法。”<br>3、传入undefined参数是为了确保undefined的值是undefined，避免被低版本浏览器通过window.undefined＝“”这样的赋值语句重写。<br>3、传入window、undefined参数有一个共通原因是可以使其变为局部变量，这样在jQuery代码块中访问它时，不需要将作用域回退到顶层作用域，更快地访问到window对象。同时局部变量可以进行压缩优化，压缩为一个字符，也省不少字节。<br>sea.js，确保全局环境中只有一个seajs，events、。。。等均保存在data中。</p>
 <pre><code><span class="built_in">var</span> seajs <span class="subst">=</span> <span class="built_in">global</span><span class="built_in">.</span>seajs <span class="subst">=</span> {
     <span class="comment">// The current version of Sea.js being used</span>
     version: <span class="string">"2.1.1"</span>
 }
 <span class="built_in">var</span> <span class="built_in">data</span> <span class="subst">=</span> seajs<span class="built_in">.</span><span class="built_in">data</span> <span class="subst">=</span> {}
-</code></pre><p>（三）util-lang.js</p>
+</code></pre><p>util-lang.js</p>
 <pre><code><span class="function"><span class="keyword">function</span> <span class="title">isType</span><span class="params">(type)</span> {</span>
     <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(obj)</span> {</span>
         <span class="keyword">return</span> <span class="built_in">Object</span>.prototype.toString.call(obj) === <span class="string">"[object "</span> + type + <span class="string">"]"</span>
@@ -46,29 +47,12 @@
 <span class="function"><span class="keyword">function</span> <span class="title">cid</span><span class="params">()</span> {</span>
     <span class="keyword">return</span> _cid++
 }
-</code></pre><p>先举例说明一下如何做类型检测：</p>
-<pre><code>var a = <span class="string">"aa"</span><span class="comment">;</span>
-console<span class="preprocessor">.log</span>(Object<span class="preprocessor">.prototype</span><span class="preprocessor">.toString</span><span class="preprocessor">.call</span>(a)) //[object String]
-var a = <span class="number">123</span><span class="comment">;</span>
-console<span class="preprocessor">.log</span>(Object<span class="preprocessor">.prototype</span><span class="preprocessor">.toString</span><span class="preprocessor">.call</span>(a)) //[object Number]
-var a = [<span class="string">"aa"</span>]<span class="comment">;</span>
-console<span class="preprocessor">.log</span>(Object<span class="preprocessor">.prototype</span><span class="preprocessor">.toString</span><span class="preprocessor">.call</span>(a)) //[object Array]
-var a = function(){}<span class="comment">;</span>
-console<span class="preprocessor">.log</span>(Object<span class="preprocessor">.prototype</span><span class="preprocessor">.toString</span><span class="preprocessor">.call</span>(a)) //[object Function]
-var a = {}<span class="comment">;</span>
-console<span class="preprocessor">.log</span>(Object<span class="preprocessor">.prototype</span><span class="preprocessor">.toString</span><span class="preprocessor">.call</span>(a)) //[object Object]
-</code></pre><p>原来这么简单，将变量转变成字符串就可以打印出其类型。有没有觉得isType函数有些特别，接受一个type参数，其内部返回一个接受obj参数的匿名函数。为什么不直接定义一个isType函数，传递type、obj两个参数，判断此obj是不是type类型，多好理解。哎，不要乱想，这可是javascript高级技巧——柯里化，柯里化就是把接受多个参数的函数换成接受单一参数的函数，并返回接受余下的参数的新函数的技术。以后写代码也试试这酷炫吊的技巧。</p>
-<p>（四）util-events.js,简单事件机制包括绑定、解绑、触发。</p>
-<pre><code><span class="keyword">var</span> events = data.events = {}
-seajs.on = <span class="function"><span class="keyword">function</span><span class="params">(name, callback)</span> {</span>
-    <span class="keyword">var</span> <span class="keyword">list</span> = events[name] || (events[name] = []);
-    <span class="keyword">list</span>.push(callback);
-    <span class="keyword">return</span> seajs;
-}
-seajs.off = <span class="function"><span class="keyword">function</span><span class="params">(name, callback)</span> {</span>}
-<span class="keyword">var</span> emit = seajs.emit = <span class="function"><span class="keyword">function</span><span class="params">(name, data)</span> {</span>}
-</code></pre><p>1、将事件对象保存到seajs.data.events中；<br>2、每次绑定事件时在seajs.data.events中创建name/callback键值对保存事件的宿主元素和事件处理函数。<br>3、实际应用中主要使用seajs的模块化组织方式，未使用事件绑定功能</p>
-<p>（五）util-path.js</p>
+</code></pre><p>util-events.js,简单事件机制包括绑定、解绑、触发。</p>
+<pre><code>var <span class="keyword">events</span> = <span class="transposed_variable">data.</span><span class="keyword">events</span> = <span class="cell">{}</span>
+<span class="transposed_variable">seajs.</span>on = <span class="function"><span class="keyword">function</span><span class="params">(name, callback)</span> {}</span>
+<span class="transposed_variable">seajs.</span>off = <span class="function"><span class="keyword">function</span><span class="params">(name, callback)</span> {}</span>
+var emit = <span class="transposed_variable">seajs.</span>emit = <span class="function"><span class="keyword">function</span><span class="params">(name, data)</span> {}</span>
+</code></pre><p>util-path.js</p>
 <pre><code><span class="keyword">var</span> doc = document
 <span class="keyword">var</span> loc = location
 <span class="keyword">var</span> cwd = dirname(loc.href)
@@ -94,17 +78,18 @@ seajs.off = <span class="function"><span class="keyword">function</span><span cl
 
 <span class="comment">// 对外接口</span>
 seajs.resolve = id2Uri
-</code></pre><p>(六)util-request.js</p>
+</code></pre><p>util-request.js</p>
 <pre><code>//创建<span class="tag">&lt;<span class="title">link</span>&gt;</span>或<span class="tag">&lt;<span class="title">script</span>&gt;</span><span class="javascript">标签，预加载后插入到页面中。
 <span class="function"><span class="keyword">function</span> <span class="title">request</span><span class="params">(url, callback, charset)</span> {</span>}
 <span class="function"><span class="keyword">function</span> <span class="title">getCurrentScript</span><span class="params">()</span> {</span>}</span>
-</code></pre><p>（七）util-deps.js，只有一个函数，用于提取每个模块中require的文件</p>
+</code></pre><p>util-deps.js，只有一个函数，用于提取每个模块中require的文件</p>
 <pre><code><span class="function"><span class="keyword">function</span> <span class="title">parseDependencies</span><span class="params">(code)</span> {</span>}
-</code></pre><p>（八）module.js 模块化的核心策略</p>
+</code></pre><p>module.js 模块化的核心策略</p>
 <pre><code>seajs.<span class="keyword">use</span> = <span class="function"><span class="keyword">function</span><span class="params">(ids, callback)</span> {</span>
-    <span class="comment">//加载config中的预加载项,如jQuery</span>
+    <span class="comment">//加载config中的预加载项</span>
     Module.preload(<span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
-        <span class="comment">// ids：依赖模块或是模块本身，第三个参数为模块uri，如http://www.l99.com/_use_4，为什么要拼凑这样一个uri。</span>
+        <span class="comment">// ids：依赖模块或是模块本身，第三个参数为模块uri，如</span>
+        http:<span class="comment">//www.l99.com/_use_4，为什么要拼凑这样一个uri。</span>
         Module.<span class="keyword">use</span>(ids, callback, data.cwd + <span class="string">"_use_"</span> + cid())
     })
     <span class="keyword">return</span> seajs
@@ -130,6 +115,6 @@ Module.resolve = <span class="function"><span class="keyword">function</span><sp
     <span class="keyword">this</span>._remain = <span class="number">0</span>
 }
 </code></pre><p>。。。<br>这个地方还有很多实质内容没有分析，今天先到这，专注不下去了。<br>。。。</p>
-<p>（九）outro.js，将this传入闭包体global，在浏览器环境中global 是 window 对象。在 Node.js 环境中global 则是 node 环境中的 global 对象</p>
+<p>outro.js，将this传入闭包体global，在浏览器环境中global 是 window 对象。在 Node.js 环境中global 则是 node 环境中的 global 对象</p>
 <pre><code>})(<span class="keyword">this</span>);
-</code></pre></article><nav id="article-pagination"><a href="/2014/03/29/h5-collapse/" title="Previous article: HTML5移动开发中菜单如何左右折叠" class="prev">&larr; Previous article</a><a href="/2014/03/01/h5-specs/" title="Next article: 移动端浏览器下页面制作规范" class="next">Next article &rarr;</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>
+</code></pre></article><nav id="article-pagination"><a href="http://localhost:4000/2014/03/29/h5-collapse/" title="Previous article: HTML5移动开发中菜单如何左右折叠" class="prev" target="_blank" rel="external">← Previous article</a><a href="http://localhost:4000/2014/03/01/h5-specs/" title="Next article: 移动端浏览器下页面制作规范" class="next" target="_blank" rel="external">Next article →</a></nav></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="http://localhost:4000/about" target="_blank" rel="external">About</a></li><li><a href="http://localhost:4000/archives" target="_blank" rel="external">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone" target="_blank" rel="external">Source</a></li><li><a href="http://localhost:4000/atom.xml" target="_blank" rel="external">Feed</a></li></ul></nav></section></footer></body></html></article></section><footer id="page-footer"><section><nav id="footer-menu"><ul><li><a href="/about">About</a></li><li><a href="/archives">Archive</a></li><li><a href="http://github.com/widatama/hexo-jade-barebone">Source</a></li><li><a href="/atom.xml">Feed</a></li></ul></nav></section></footer></body></html>
