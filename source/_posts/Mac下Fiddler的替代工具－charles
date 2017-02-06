@@ -1,0 +1,18 @@
+Mac下Fiddler的替代工具－charles
+##背景
+Windows下Fiddler的强大不容赘述，Mac下尝试了多种替代工具，基本都是Fiddler的一小部分功能。在此介绍一下真正可以媲美的大招——收费工具Charles，如何破解。
+
+##傻瓜教程版：
+1. 官网下载3.11.1版本（不是最新版）
+https://www.charlesproxy.com/assets/release/3.11.1/charles-proxy-3.11.1.dmg
+2. 安装后打开提示有30天试用期，后退出
+3. github上下载破解版文件
+https://github.com/100apps/charles-hacking
+4. 将下载的charles.jar替换到本地/Applications/Charles.app/Contents/Java/charles.jar
+5. 再次打开可正常使用
+对于抓包、构造请求、替换响应等功能就随便你玩了。。
+
+##自行破解请参考：
+https://imququ.com/post/user-fiddler-on-macos.html
+http://www.gfzj.us/tech/2015/06/24/charles-hacking.html
+https://www.charlesproxy.com

@@ -4,7 +4,7 @@
   <subtitle><![CDATA[梦想走着走着就丢了 只想充实地过每一天 每天都有挑战]]></subtitle>
   <link href="/atom.xml" rel="self"/>
   <link href="http://yoursite.com/"/>
-  <updated>2015-12-15T14:55:25.557Z</updated>
+  <updated>2017-02-06T08:30:45.964Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -13,6 +13,70 @@
   </author>
   
   <generator uri="http://zespia.tw/hexo/">Hexo</generator>
+  
+  <entry>
+    <title><![CDATA[纪念2016年这充实的一年]]></title>
+    <link href="http://yoursite.com/2017/02/06/summary2016/"/>
+    <id>http://yoursite.com/2017/02/06/summary2016/</id>
+    <published>2017-02-06T00:00:00.000Z</published>
+    <updated>2017-02-06T08:26:50.000Z</updated>
+    <content type="html"><![CDATA[<h2 id="2月">2月</h2>
+<p>2016年是从2月中旬开始的，【北斗重构】进入上线后反馈阶段，收获了较多的赞赏，也有个别用户反馈UI的短期不适应；</p>
+<p>继续负责【北斗】的迭代工作。</p>
+<h2 id="3月">3月</h2>
+<p>组织结构调整已基本确定；</p>
+<p>继续跟进【北斗】的迭代及构建优化工作，但预计在5月之前交接出去；</p>
+<p>同时接入新的产品【百度指数】，与原来的指数团队沟通产品情况。</p>
+<h2 id="4月">4月</h2>
+<p>完成【北斗】最重要最困难的迭代之一——兴趣节点升级，然后交接工作；</p>
+<p>调研指数系产品【品牌数字看板】并在五一前提交框架设计方案。</p>
+<h2 id="5月">5月</h2>
+<p>开发【品牌数字看板】，月底完成基本功能，内部提测;</p>
+<p>搬了一次家;</p>
+<p>月底终于鼓足勇气开始了英语口语在线外教学习，每周两次晚课，将持续6个月。</p>
+<h2 id="6月">6月</h2>
+<p>【品牌数字看板】根据PM和UE的反馈进行优化，细化外围的产品需求如关于我们、帮助等；</p>
+<p>家庭中的造人计划成功，父母开始和我们一起生活，感觉已经离年轻和自由越来越遥远了。</p>
+<h2 id="7月">7月</h2>
+<p>中旬【品牌数字看板】V1.0上线，进入用户测试、培训、反馈阶段；</p>
+<p>指数系新产品【涟漪】启动，陆续进行需求沟通、技术调研、制定排期、搭建框架；</p>
+<p>【涟漪】完成首页的开发后暂停；</p>
+<p>下旬开始准备8月份的述职答辩。</p>
+<h2 id="8月">8月</h2>
+<p>【品牌数字看板】集中优化兼容性问题，于中旬上线;</p>
+<p>备战8月14日的述职答辩；</p>
+<p>下旬恢复开发【涟漪】；</p>
+<p>孕期反应加之工作压力不幸换上甲亢，一个月内暴瘦10斤；</p>
+<p>坚持周末去游泳。</p>
+<h2 id="9月">9月</h2>
+<p>【涟漪】提测主要功能，开发外围功能，问题修复及优化；</p>
+<p>坚持周末去游泳。</p>
+<h2 id="10月">10月</h2>
+<p>【涟漪】demo版本上线；</p>
+<p>天冷了，胎宝宝大了，不去游泳了。</p>
+<h2 id="11月">11月</h2>
+<p>【涟漪】正式版本V1.0上线；</p>
+<p>持续6个月的英语口语在线外教学习终于结束了;</p>
+<p>天气冷了，胎宝宝也快7个月了，不再骑自行车上班了。</p>
+<h2 id="12月">12月</h2>
+<p>连续两周包括周末加班完成指数系新产品【指数手百版】V1.0、V2.0；</p>
+<p>【涟漪】优化，V2.0上线；</p>
+<p>买了一套房子，负债累累。</p>
+<h2 id="2017年1月">2017年1月</h2>
+<p>指数系三个产品的工作交接，包括【品牌数字看板】、【涟漪】、【指数手百版】；</p>
+<p>计划2月休产假。</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<h2 id="2月">2月</h2>
+<p>2016年是从2月中旬开始的，【北斗重构】进入上线后反馈阶段，收获了较多的赞赏，也有个别用户反馈UI的短期不适应；</p>
+<p>继续负责【北斗】的迭代工作。</p>
+<h2 id="3月">3月</h2>
+<p>组织结构调整已基本确]]>
+    </summary>
+    
+      <category term="年终总结" scheme="http://yoursite.com/tags/%E5%B9%B4%E7%BB%88%E6%80%BB%E7%BB%93/"/>
+    
+  </entry>
   
   <entry>
     <title><![CDATA[前端MVC变形记]]></title>
@@ -1830,216 +1894,6 @@ Animal.prototype = {
     </summary>
     
       <category term="响应式 webapp" scheme="http://yoursite.com/tags/%E5%93%8D%E5%BA%94%E5%BC%8F-webapp/"/>
-    
-  </entry>
-  
-  <entry>
-    <title><![CDATA[献给2014年的第一场雪]]></title>
-    <link href="http://yoursite.com/2013/12/12/js-snowflake/"/>
-    <id>http://yoursite.com/2013/12/12/js-snowflake/</id>
-    <published>2013-12-12T08:22:52.000Z</published>
-    <updated>2015-02-13T06:21:28.000Z</updated>
-    <content type="html"><![CDATA[<p>当我查找MVC、MVP、MVVM这些设计模式相关资料时，发现了这个背景效果——飘雪——做得还不错的网站，<a href="http://nirajrules.wordpress.com/2009/07/18/mvc-vs-mvp-vs-mvvm/" target="_blank" rel="external">http://nirajrules.wordpress.com/2009/07/18/mvc-vs-mvp-vs-mvvm/</a>，如果你不能打开链接，就悲剧了，“墙”里难见“墙”外花。于是，从该站点剥离出纯粹实现此动画的代码，制作demo如链接（忙啊！！还没传上去）。</p>
-<p>我们会发现一些细节，鼠标移动的轨迹控制了风向和风速，从而控制雪花的方向和速度；当前tab不是活动tab时动画停止，避免过度绘制。说说你实现该效果的思路，或是关键词。定时器？运动轨迹？边际检测？我们先按照自己的思路一步一步走，再结合它的代码修正。</p>
-<ol>
-<li>制造雪花</li>
-<li>执行定时器</li>
-</ol>
-<p>哦，就这样？好像也很简单~</p>
-<h3 id="1、采用何种模式？">1、采用何种模式？</h3>
-<p>前提是基于原生javascript来考虑，不要受jquery的影响。首先这里不涉及继承，这就简单很多。javascript中最基本又最有用的模式就是单体，用来划分命名空间并将一批相关属性和方法组织在一起，同时也对外提供了一个访问内部属性和方法的访问点。为了避免被外界访问，将单例的“值部分”闭包起来，在内部返回当前活动对象（绑定到this上的属性和方法仍然可以被外部访问）。好，外壳做好了~</p>
-<pre><code>var snowStorm = (<span class="keyword">function</span>(window, document) {
-   <span class="keyword">...</span>
-   <span class="keyword">return</span> this;
-}(window, document));;
-</code></pre><h3 id="2、制造雪花">2、制造雪花</h3>
-<p>如何构造雪花，它的构造函数需要哪些属性？位置坐标必须有，用来记录和控制轨迹？关联DOM对象必须有， 方便设置view相关属性? 它需要哪些方法呢？setPosition（设置位置）？setVelocities（设置速度）？move（移动的入口函数）？根据效果需要可能还需要melt（融化）、stick（堆成雪堆）等。多个雪花实例是随机生成的，运动也互不影响，不必有共享的属性和方法，所以不考虑原型。抽取出的代码结构如下：</p>
-<pre><code><span class="keyword">this</span>.SnowFlake = <span class="function"><span class="keyword">function</span><span class="params">(type,x,y)</span> {</span>
-    <span class="keyword">var</span> s = <span class="keyword">this</span>;
-    <span class="keyword">this</span>.type = type;
-    <span class="keyword">this</span>.x = x||<span class="built_in">parseInt</span>(rnd(screenX-<span class="number">20</span>),<span class="number">10</span>);
-    <span class="keyword">this</span>.y = (!<span class="built_in">isNaN</span>(y)?y:-rnd(screenY)-<span class="number">12</span>);
-    <span class="keyword">this</span>.vX = <span class="literal">null</span>;
-    <span class="keyword">this</span>.vY = <span class="literal">null</span>;
-    <span class="keyword">this</span>.active = <span class="number">1</span>;
-    <span class="keyword">this</span>.fontSize = (<span class="number">10</span>+(<span class="keyword">this</span>.type/<span class="number">5</span>)*<span class="number">10</span>);
-    <span class="keyword">this</span>.o = document.createElement(<span class="string">'div'</span>);
-    <span class="keyword">this</span>.o.innerHTML = storm.snowCharacter;
-    <span class="keyword">this</span>.o.style.color = storm.snowColor;
-    <span class="keyword">this</span>.o.style.position = (fixedForEverything?<span class="string">'fixed'</span>:<span class="string">'absolute'</span>);
-    <span class="keyword">this</span>.o.style.width = storm.flakeWidth+<span class="string">'px'</span>;
-    <span class="keyword">this</span>.o.style.height = storm.flakeHeight+<span class="string">'px'</span>;
-    <span class="keyword">this</span>.o.style.fontFamily = <span class="string">'arial,verdana'</span>;
-    <span class="keyword">this</span>.o.style.cursor = <span class="string">'default'</span>;
-    <span class="keyword">this</span>.o.style.overflow = <span class="string">'hidden'</span>;
-    <span class="keyword">this</span>.o.style.fontWeight = <span class="string">'normal'</span>;
-    <span class="keyword">this</span>.o.style.zIndex = storm.zIndex;
-    docFrag.appendChild(<span class="keyword">this</span>.o);
-
-    <span class="keyword">this</span>.refresh = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
-      ......
-      storm.setXY(s.o, s.x, s.y);
-    };
-
-    <span class="keyword">this</span>.vCheck = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
-      <span class="keyword">if</span> (s.vX&gt;=<span class="number">0</span> &amp;&amp; s.vX&lt;<span class="number">0.2</span>) {
-        s.vX = <span class="number">0.2</span>;
-      } <span class="keyword">else</span> <span class="keyword">if</span> (s.vX&lt;<span class="number">0</span> &amp;&amp; s.vX&gt;-<span class="number">0.2</span>) {
-        s.vX = -<span class="number">0.2</span>;
-      }
-      <span class="keyword">if</span> (s.vY&gt;=<span class="number">0</span> &amp;&amp; s.vY&lt;<span class="number">0.2</span>) {
-        s.vY = <span class="number">0.2</span>;
-      }
-    };
-
-    <span class="keyword">this</span>.move = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
-        ...
-    };
-
-    <span class="keyword">this</span>.setVelocities = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
-      s.vX = vRndX+rnd(storm.vMaxX*<span class="number">0.12</span>,<span class="number">0.1</span>);
-      s.vY = vRndY+rnd(storm.vMaxY*<span class="number">0.12</span>,<span class="number">0.1</span>);
-    };
-
-    <span class="keyword">this</span>.setOpacity = <span class="function"><span class="keyword">function</span><span class="params">(o,opacity)</span> {</span>
-      <span class="keyword">if</span> (!opacitySupported) {
-        <span class="keyword">return</span> <span class="literal">false</span>;
-      }
-      o.style.opacity = opacity;
-    };
-
-    <span class="keyword">this</span>.melt = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
-      <span class="keyword">if</span> (!storm.useMeltEffect || !s.melting) {
-        s.recycle();
-      } <span class="keyword">else</span> {
-        <span class="keyword">if</span> (s.meltFrame &lt; s.meltFrameCount) {
-          s.setOpacity(s.o,s.meltFrames[s.meltFrame]);
-          s.o.style.fontSize = s.fontSize-(s.fontSize*(s.meltFrame/s.meltFrameCount))+<span class="string">'px'</span>;
-          s.o.style.lineHeight = storm.flakeHeight+<span class="number">2</span>+(storm.flakeHeight*<span class="number">0.75</span>*(s.meltFrame/s.meltFrameCount))+<span class="string">'px'</span>;
-          s.meltFrame++;
-        } <span class="keyword">else</span> {
-          s.recycle();
-        }
-      }
-};
-</code></pre><p>构造函数完成，可以制造雪花，插入到页面了。</p>
-<pre><code>this<span class="preprocessor">.createSnow</span> = function(limit,allowInactive) {
-    var i<span class="comment">;</span>
-    for (i=<span class="number">0</span><span class="comment">; i&lt;limit; i++) {</span>
-      storm<span class="preprocessor">.flakes</span>[storm<span class="preprocessor">.flakes</span><span class="preprocessor">.length</span>] = new storm<span class="preprocessor">.SnowFlake</span>(parseInt(rnd(flakeTypes),<span class="number">10</span>))<span class="comment">;</span>
-      if (allowInactive || i&gt;storm<span class="preprocessor">.flakesMaxActive</span>) {
-        storm<span class="preprocessor">.flakes</span>[storm<span class="preprocessor">.flakes</span><span class="preprocessor">.length</span>-<span class="number">1</span>]<span class="preprocessor">.active</span> = -<span class="number">1</span><span class="comment">;</span>
-      }
-    }
-    storm<span class="preprocessor">.targetElement</span><span class="preprocessor">.appendChild</span>(docFrag)<span class="comment">;</span>
-}<span class="comment">;</span>
-</code></pre><p>关于move方法的实现，也就是移动轨迹相关的细节，我曾一度想了解动画原理，仔细分析下这个方法：</p>
-<pre><code><span class="keyword">this</span>.move = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
-    <span class="comment">// rnd: 返回[param2,param1)之间的随机数</span>
-    <span class="comment">// plusMinus: 以相同概率返回±param</span>
-    <span class="comment">// storm.vMaxX=2.5：水平方向最大速度</span>
-    <span class="comment">// 水平风速vRndX = plusMinus(rnd(storm.vMaxX,0.2)); --from randomizeWind（）</span>
-    <span class="comment">// vRndX∈±[0.2,2.5)</span>
-    <span class="comment">// 水平速度s.vX = vRndX+rnd(storm.vMaxX*0.12,0.1) –-from setVelocities（）</span>
-    <span class="comment">// s.vX = ±[0.2,2.5) + [0.1,2.5*0.12);</span>
-    <span class="comment">// 水平速度≠水平风速？为什么要修正[0.1,2.5*0.12)，0.12是怎么来的？</span>
-    <span class="comment">// 风偏速windOffset默认为1，并根据鼠标移动的位置计算。处于屏幕中间为0，最左侧为-2，最右侧为2；windOffset∈[-2,2]</span>
-    <span class="keyword">var</span> vX = s.vX*windOffset, yDiff;
-    <span class="comment">// 单位时间运动的终点值=初始值+水平速度</span>
-    s.x += vX;
-    <span class="comment">// 同理s.vX = [0.2,2.5) + [0.1,2.5*0.12);</span>
-    <span class="comment">// 之前忽略了一点，雪花和雪花是不一样的。尤其是轻重不同，那下落速度必定不同。</span>
-    <span class="comment">// this.vAmpTypes = [1,1.2,1.4,1.6,1.8];</span>
-    <span class="comment">// this.type ∈[0,5)的随机整数</span>
-    <span class="comment">// this.vAmp = this.vAmpTypes[this.type];</span>
-    s.y += (s.vY*s.vAmp);
-    <span class="comment">// 边际检测</span>
-    <span class="comment">// 右侧出屏幕，设置到左边,左侧出屏幕，设置到右边</span>
-    <span class="keyword">if</span> (s.x &gt;= screenX || screenX-s.x &lt; storm.flakeWidth) { <span class="comment">// X-axis scroll check</span>
-    s.x = <span class="number">0</span>;
-    } <span class="keyword">else</span> <span class="keyword">if</span> (vX &lt; <span class="number">0</span> &amp;&amp; s.x-storm.flakeLeftOffset &lt; -storm.flakeWidth) {
-    s.x = screenX-storm.flakeWidth-<span class="number">1</span>; <span class="comment">// flakeWidth;</span>
-    }
-    <span class="comment">// 设置到页面中</span>
-    s.refresh();
-    <span class="comment">// yDiff 当前雪花位置距离屏幕底部的高度</span>
-    <span class="comment">// 以下实现雪花是否成堆、融化的效果，不再赘述</span>
-    yDiff = screenY+scrollY-s.y+storm.flakeHeight;
-    <span class="keyword">if</span> (yDiff&lt;storm.flakeHeight) {
-        s.active = <span class="number">0</span>;
-        <span class="keyword">if</span> (storm.snowStick) {
-          s.stick();
-        } <span class="keyword">else</span> {
-          s.recycle();
-        }
-    } <span class="keyword">else</span> {
-        <span class="keyword">if</span> (storm.useMeltEffect &amp;&amp; s.active &amp;&amp; s.type &lt; <span class="number">3</span> &amp;&amp; !s.melting &amp;&amp; <span class="built_in">Math</span>.random()&gt;<span class="number">0.998</span>) {
-          <span class="comment">// ~1/1000 chance of melting mid-air, with each frame</span>
-          s.melting = <span class="literal">true</span>;
-          s.melt();
-          <span class="comment">// only incrementally melt one frame</span>
-          <span class="comment">// s.melting = false;</span>
-        }
-        <span class="keyword">if</span> (storm.useTwinkleEffect) {
-          <span class="keyword">if</span> (s.twinkleFrame &lt; <span class="number">0</span>) {
-            <span class="keyword">if</span> (<span class="built_in">Math</span>.random() &gt; <span class="number">0.97</span>) {
-              s.twinkleFrame = <span class="built_in">parseInt</span>(<span class="built_in">Math</span>.random() * <span class="number">8</span>, <span class="number">10</span>);
-            }
-          } <span class="keyword">else</span> {
-            s.twinkleFrame--;
-            <span class="keyword">if</span> (!opacitySupported) {
-              s.o.style.visibility = (s.twinkleFrame &amp;&amp; s.twinkleFrame % <span class="number">2</span> === <span class="number">0</span> ? <span class="string">'hidden'</span> : <span class="string">'visible'</span>);
-            } <span class="keyword">else</span> {
-              s.o.style.opacity = (s.twinkleFrame &amp;&amp; s.twinkleFrame % <span class="number">2</span> === <span class="number">0</span> ? <span class="number">0</span> : <span class="number">1</span>);
-            }
-          }
-        }
-    }
-};
-</code></pre><h3 id="3、执行定时器ergrg">3、执行定时器ergrg</h3>
-<p>那么，遍历所有的雪花，让她们飘去吧。要么setInterval、要么递归调用setTimeout。</p>
-<pre><code><span class="transposed_variable">this.</span>snow = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
-    var active = <span class="number">0</span>, flake = null, <span class="built_in">i</span>, <span class="built_in">j</span>;
-    <span class="keyword">for</span> (<span class="built_in">i</span>=<span class="number">0</span>, <span class="built_in">j</span>=<span class="transposed_variable">storm.</span><span class="transposed_variable">flakes.</span><span class="built_in">length</span>; <span class="built_in">i</span>&lt;<span class="built_in">j</span>; <span class="built_in">i</span>++) <span class="cell">{
-      if (storm.flakes[i].active === <span class="number">1</span>) {
-        storm.flakes[i].move();
-        active++;
-      }</span>
-      <span class="keyword">if</span> (<span class="transposed_variable">storm.</span>flakes<span class="matrix">[i].</span>melting) <span class="cell">{
-        storm.flakes[i].melt();
-      }</span>
-    }
-    ……
-    <span class="keyword">if</span> (<span class="transposed_variable">storm.</span>timer) <span class="cell">{
-      features.getAnimationFrame(storm.snow);
-    }</span>                
-};
-</code></pre><p>这里引入了一个新的专业名词“requestAnimationFrame”。</p>
-<p>我们知道，setInterval、setTimeout在实现动画的流畅性上总是不理想。动画比较棘手的问题是延迟应该多少，一方面要必须短，从而使动画流畅地进行，另一方面还要足够长，使得浏览器可以完成渲染。大多数浏览器的刷新频率为60Hz，即每秒60次刷新，那流畅动画的最佳间隔是1000ms/60约为17ms。其次的问题是无法精确，第二个参数指定的延迟表示代码何时会添加到浏览器的UI线程队列中。如果UI线程处于繁忙状态，那代码不会被马上执行。再次，即使看不到网页，或是处于背景选项卡中的页面，动画都会频繁出现，导致过度绘制。</p>
-<p>实际上，CSS transitions 和 animations的动画都非常平滑，优势在于浏览器知道哪些动画将会发生。而javascript动画，浏览器不知道动画正在发生。所以一个独特的方案就是创建一个requestAnimationFrame（）方法来告诉浏览器哪些javascript代码正在执行，而计时由系统处理，与浏览器的绘制时间间隔保持一致。此方法接受一个参数，是一个动画函数，并需要在函数最后再次调用requestAnimationFrame（）方法。</p>
-<p>requestAnimationFrame（）API是W3C起草的一个新议案，目前chrome10+、firefox 4+、IE10+已支持。上述代码中getAnimationFrame方法针对不同浏览器对requestAnimationFrame进行了封装，的实现如下：</p>
-<pre><code><span class="reserved">function</span> timeoutShim(callback) {
-    <span class="built_in">window</span>.setTimeout(callback, <span class="number">1000</span>/(storm.animationInterval || <span class="number">20</span>));
-}
-
-<span class="reserved">var</span> _animationFrame = (<span class="built_in">window</span>.requestAnimationFrame ||
-    <span class="built_in">window</span>.webkitRequestAnimationFrame ||
-    <span class="built_in">window</span>.mozRequestAnimationFrame ||
-    <span class="built_in">window</span>.oRequestAnimationFrame ||
-    <span class="built_in">window</span>.msRequestAnimationFrame ||
-    timeoutShim);
-
-<span class="regexp">//</span> apply to <span class="built_in">window</span>, avoid <span class="string">"illegal invocation"</span> errors <span class="keyword">in</span> Chrome
-getAnimationFrame = _animationFrame ? <span class="reserved">function</span>() {
-    <span class="keyword">return</span> _animationFrame.apply(<span class="built_in">window</span>, arguments);
-} : <span class="literal">null</span>;
-</code></pre><p>最后，总结一下代码结构如下：<br><img src="/img/snowflake.png" alt="雅虎科技"></p>
-]]></content>
-    <summary type="html">
-    <![CDATA[<p>当我查找MVC、MVP、MVVM这些设计模式相关资料时，发现了这个背景效果——飘雪——做得还不错的网站，<a href="http://nirajrules.wordpress.com/2009/07/18/mvc-vs-mvp-vs-mvvm/" target="_bla]]>
-    </summary>
-    
-      <category term="js动画 css3 requestAnimationFrame 雪花动画" scheme="http://yoursite.com/tags/js%E5%8A%A8%E7%94%BB-css3-requestAnimationFrame-%E9%9B%AA%E8%8A%B1%E5%8A%A8%E7%94%BB/"/>
     
   </entry>
   
